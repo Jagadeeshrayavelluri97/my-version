@@ -21,34 +21,83 @@ export const RoomProvider = ({ children }) => {
   const [initialized, setInitialized] = useState(false);
   const location = useLocation();
 
-  // Fetch rooms on component mount
+  // Track last update time for polling
+  const [lastUpdateTime, setLastUpdateTime] = useState(Date.now());
+
+  // Fetch rooms on component mount and set up polling
   useEffect(() => {
+    // Initial fetch
     fetchRooms();
-  }, []);
+
+    // Set up polling for data updates (every 10 seconds)
+    const pollingInterval = setInterval(() => {
+      // Only poll if we're not on an auth page
+      if (!isAuthPage(location)) {
+        checkForUpdates();
+      }
+    }, 10000); // 10 seconds
+
+    // Clean up interval on unmount
+    return () => clearInterval(pollingInterval);
+  }, [location.pathname]);
+
+  // Check if data has been updated in the database
+  const checkForUpdates = async () => {
+    try {
+      // Use a lightweight endpoint to check for updates
+      const res = await axios.get("/rooms/last-updated");
+      if (res.data.success && res.data.lastUpdated) {
+        // If server data is newer than our last update, refresh the data
+        if (new Date(res.data.lastUpdated) > new Date(lastUpdateTime)) {
+          console.log("Room data updated in database, refreshing...");
+          await fetchRooms();
+          setLastUpdateTime(Date.now());
+        }
+      }
+    } catch (err) {
+      // Silently handle errors during polling
+      console.log("Error checking for updates:", err);
+    }
+  };
 
   // Fetch all rooms
   const fetchRooms = async () => {
-    setLoading(true);
+    // Don't set loading to true if we're just refreshing data in the background
+    // This prevents flickering when data is refreshed
+    const wasAlreadyInitialized = initialized;
+    if (!wasAlreadyInitialized) {
+      setLoading(true);
+    }
+
     try {
       const res = await axios.get("/rooms");
       if (res.data.success) {
         setRooms(res.data.data);
         setInitialized(true);
+        // Update the last update time
+        setLastUpdateTime(Date.now());
       } else {
         setRooms([]);
       }
-      setLoading(false);
+      if (!wasAlreadyInitialized) {
+        setLoading(false);
+      }
     } catch (err) {
       console.error("Error fetching rooms:", err);
       // Don't show error messages on login/register pages
       if (!isAuthPage(location)) {
         // If unauthorized, don't show the error toast as it will be handled by the API interceptor
         if (!(err.response && err.response.status === 401)) {
-          showToast("Failed to fetch rooms", { type: "error" }, location);
+          // Only show toast if this was an initial load, not a background refresh
+          if (!wasAlreadyInitialized) {
+            showToast("Failed to fetch rooms", { type: "error" }, location);
+          }
         }
       }
       setRooms([]);
-      setLoading(false);
+      if (!wasAlreadyInitialized) {
+        setLoading(false);
+      }
     }
   };
 

@@ -217,13 +217,21 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("token");
     localStorage.removeItem("adminData");
     localStorage.removeItem("tokenTimestamp");
+    localStorage.removeItem("lastAuthErrorTime");
 
     // Clear auth header
     delete api.defaults.headers.common["Authorization"];
 
     setAdmin(null);
     setIsAuthenticated(false);
-    showToast("Logged out successfully", {}, location);
+
+    // Show toast and redirect to login page
+    showToast("Logged out successfully", { type: "success" }, location);
+
+    // Use a small timeout to ensure the toast is shown before redirecting
+    setTimeout(() => {
+      window.location.href = "/login";
+    }, 300);
   };
 
   // Update admin profile

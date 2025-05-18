@@ -24,15 +24,46 @@ const TenantForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isEditMode = !!id;
-  
+
   // Get room and tenant context
   const { rooms, loading: roomsLoading } = useRooms();
-  const { addTenant, updateTenant, getTenant } = useTenants();
+  const { addTenant, updateTenant, getTenant, getTenantsByRoom } = useTenants();
 
   // Get roomId from URL query parameter if available
   const queryParams = new URLSearchParams(location.search);
   const preselectedRoomId = queryParams.get("roomId");
   const returnToRoom = queryParams.get("returnToRoom") === "true";
+
+  // Check if preselected room has capacity when component mounts
+  useEffect(() => {
+    if (!isEditMode && preselectedRoomId && rooms.length > 0) {
+      const selectedRoom = rooms.find((r) => r._id === preselectedRoomId);
+      const currentTenants = getTenantsByRoom(preselectedRoomId);
+
+      if (selectedRoom && currentTenants.length >= selectedRoom.capacity) {
+        showToast(
+          `Room ${selectedRoom.roomNumber} on Floor ${selectedRoom.floorNumber} is at full capacity`,
+          { type: "error" },
+          location
+        );
+
+        // Redirect back to room details
+        if (returnToRoom) {
+          setTimeout(() => {
+            navigate(`/rooms/details/${preselectedRoomId}`);
+          }, 1500);
+        }
+      }
+    }
+  }, [
+    rooms,
+    preselectedRoomId,
+    isEditMode,
+    getTenantsByRoom,
+    navigate,
+    returnToRoom,
+    location,
+  ]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -124,6 +155,28 @@ const TenantForm = () => {
         },
       });
     } else {
+      // If changing room, check if the new room has capacity
+      if (name === "roomId" && value) {
+        const selectedRoom = rooms.find((r) => r._id === value);
+        const currentTenants = getTenantsByRoom(value);
+
+        // If room is at capacity and we're not editing an existing tenant in this room
+        if (
+          selectedRoom &&
+          currentTenants.length >= selectedRoom.capacity &&
+          (!isEditMode || (isEditMode && formData.roomId !== value))
+        ) {
+          showToast(
+            `Room ${selectedRoom.roomNumber} on Floor ${selectedRoom.floorNumber} is at full capacity`,
+            { type: "error" },
+            location
+          );
+
+          // Don't update the form with the full room
+          return;
+        }
+      }
+
       setFormData({ ...formData, [name]: value });
     }
   };
@@ -133,7 +186,23 @@ const TenantForm = () => {
     setLoading(true);
 
     try {
-      const success = isEditMode 
+      // Double-check room capacity before submitting (in case it changed while form was open)
+      if (!isEditMode || (isEditMode && formData.roomId !== id)) {
+        const selectedRoom = rooms.find((r) => r._id === formData.roomId);
+        const currentTenants = getTenantsByRoom(formData.roomId);
+
+        if (selectedRoom && currentTenants.length >= selectedRoom.capacity) {
+          showToast(
+            `Room ${selectedRoom.roomNumber} on Floor ${selectedRoom.floorNumber} is at full capacity`,
+            { type: "error" },
+            location
+          );
+          setLoading(false);
+          return;
+        }
+      }
+
+      const success = isEditMode
         ? await updateTenant(id, formData)
         : await addTenant(formData);
 
@@ -146,7 +215,7 @@ const TenantForm = () => {
       }
     } catch (err) {
       console.error("Error saving tenant:", err);
-      showToast("Failed to save tenant", location);
+      showToast("Failed to save tenant", { type: "error" }, location);
     } finally {
       setLoading(false);
     }
@@ -242,7 +311,10 @@ const TenantForm = () => {
               </div>
 
               <div className="premium-tenant-form-group">
-                <label htmlFor="occupation" className="premium-tenant-form-label">
+                <label
+                  htmlFor="occupation"
+                  className="premium-tenant-form-label"
+                >
                   <FaBriefcase className="inline-block mr-2" /> Occupation
                 </label>
                 <input
@@ -257,7 +329,10 @@ const TenantForm = () => {
               </div>
 
               <div className="premium-tenant-form-group">
-                <label htmlFor="idProofType" className="premium-tenant-form-label">
+                <label
+                  htmlFor="idProofType"
+                  className="premium-tenant-form-label"
+                >
                   <FaIdCard className="inline-block mr-2" /> ID Proof Type
                 </label>
                 <select
@@ -277,7 +352,10 @@ const TenantForm = () => {
               </div>
 
               <div className="premium-tenant-form-group">
-                <label htmlFor="idProofNumber" className="premium-tenant-form-label">
+                <label
+                  htmlFor="idProofNumber"
+                  className="premium-tenant-form-label"
+                >
                   <FaIdCard className="inline-block mr-2" /> ID Proof Number
                 </label>
                 <input
@@ -318,20 +396,28 @@ const TenantForm = () => {
                     <option
                       key={room._id}
                       value={room._id}
-                      disabled={room.occupiedBeds >= room.capacity && room._id !== roomId}
+                      disabled={
+                        room.occupiedBeds >= room.capacity &&
+                        room._id !== roomId
+                      }
                     >
                       Floor {room.floorNumber}, Room {room.roomNumber}
                       {room.occupiedBeds > 0
                         ? ` (${room.occupiedBeds}/${room.capacity} occupied)`
                         : " (Vacant)"}
-                      {room._id === preselectedRoomId ? " ← Selected from Rooms page" : ""}
+                      {room._id === preselectedRoomId
+                        ? " ← Selected from Rooms page"
+                        : ""}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div className="premium-tenant-form-group">
-                <label htmlFor="joiningDate" className="premium-tenant-form-label">
+                <label
+                  htmlFor="joiningDate"
+                  className="premium-tenant-form-label"
+                >
                   <FaCalendarAlt className="inline-block mr-2" /> Joining Date
                 </label>
                 <input
@@ -382,7 +468,11 @@ const TenantForm = () => {
                 className="premium-tenant-submit-btn"
               >
                 <FaSave className="mr-2" />
-                {loading ? "Saving..." : isEditMode ? "Update Tenant" : "Add Tenant"}
+                {loading
+                  ? "Saving..."
+                  : isEditMode
+                  ? "Update Tenant"
+                  : "Add Tenant"}
               </button>
             </div>
           </form>

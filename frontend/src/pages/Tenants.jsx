@@ -1,14 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FaPlus, FaSearch, FaFilter } from "react-icons/fa";
 import { toast } from "react-toastify";
 import TenantCard from "../components/TenantCard";
 import { useTenants } from "../context/TenantContext";
+import { useRooms } from "../context/RoomContext";
 
 const Tenants = () => {
-  const { tenants, loading, deleteTenant } = useTenants();
+  const { tenants, loading, deleteTenant, fetchTenants } = useTenants();
+  const { fetchRooms } = useRooms();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+
+  // Fetch both tenants and rooms when component mounts
+  useEffect(() => {
+    const refreshData = async () => {
+      console.log("Refreshing tenant and room data...");
+      await fetchRooms();
+      await fetchTenants();
+    };
+
+    refreshData();
+  }, [fetchRooms, fetchTenants]);
 
   const handleDelete = async (id) => {
     await deleteTenant(id);
