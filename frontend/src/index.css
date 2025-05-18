@@ -1,0 +1,130 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f8f9fa;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+.card {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: 0.3s;
+}
+
+.card:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary {
+  background-color: #4e73df;
+  border-color: #4e73df;
+}
+
+.btn-primary:hover {
+  background-color: #2e59d9;
+  border-color: #2653d4;
+}
+
+.sidebar {
+  min-height: 100vh;
+  background-color: #4e73df;
+  background-image: linear-gradient(180deg, #4e73df 10%, #224abe 100%);
+  background-size: cover;
+}
+
+.sidebar-link {
+  color: rgba(255, 255, 255, 0.8);
+  transition: 0.3s;
+}
+
+.sidebar-link:hover {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-link.active {
+  color: #fff;
+  font-weight: 600;
+}
+
+.dashboard-card {
+  border-left: 4px solid;
+}
+
+.dashboard-card.primary {
+  border-left-color: #4e73df;
+}
+
+.dashboard-card.success {
+  border-left-color: #1cc88a;
+}
+
+.dashboard-card.info {
+  border-left-color: #36b9cc;
+}
+
+.dashboard-card.warning {
+  border-left-color: #f6c23e;
+}
+
+.dashboard-card.danger {
+  border-left-color: #e74a3b;
+}
+
+.form-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.auth-form {
+  max-width: 450px;
+  margin: 0 auto;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+}
+
+.page-header {
+  padding: 1.5rem 0;
+  border-bottom: 1px solid #e3e6f0;
+  margin-bottom: 1.5rem;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-badge.paid {
+  background-color: #e3fcef;
+  color: #1cc88a;
+}
+
+.status-badge.unpaid {
+  background-color: #feebc8;
+  color: #f6c23e;
+}
+
+.status-badge.occupied {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+.status-badge.vacant {
+  background-color: #e3e6f0;
+  color: #5a5c69;
+}

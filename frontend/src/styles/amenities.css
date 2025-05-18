@@ -1,0 +1,116 @@
+/* Amenities selection component styles */
+
+.amenities-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.amenity-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  min-width: 120px;
+  background-color: #f8fafc;
+}
+
+.amenity-item:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.amenity-item.selected {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+  color: #1e40af;
+}
+
+.amenity-item.selected:hover {
+  background-color: #dbeafe;
+}
+
+.amenity-icon {
+  margin-right: 8px;
+  color: #10b981;
+  font-size: 1.2rem;
+}
+
+.amenity-item.selected .amenity-icon {
+  color: #3b82f6;
+}
+
+.amenity-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.custom-amenity-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px dashed #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #f8fafc;
+  color: #64748b;
+  min-width: 120px;
+}
+
+.custom-amenity-btn:hover {
+  border-color: #64748b;
+  background-color: #f1f5f9;
+}
+
+.custom-amenity-input {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+  gap: 8px;
+}
+
+.custom-amenity-input input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  font-size: 0.9rem;
+}
+
+.custom-amenity-input button {
+  padding: 8px 12px;
+  border-radius: 6px;
+  background-color: #3b82f6;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.custom-amenity-input button:hover {
+  background-color: #2563eb;
+}
+
+.custom-amenity-input button.cancel {
+  background-color: #ef4444;
+}
+
+.custom-amenity-input button.cancel:hover {
+  background-color: #dc2626;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .amenity-item, .custom-amenity-btn {
+    min-width: calc(50% - 10px);
+  }
+}

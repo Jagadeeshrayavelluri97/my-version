@@ -1,0 +1,453 @@
+/* Premium Room Card Component Styling */
+
+/* Room Card */
+.premium-card {
+  background: white;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  z-index: 1;
+  height: 100%;
+  min-height: 320px;
+  border: 1px solid rgba(229, 231, 235, 0.8);
+  backdrop-filter: blur(10px);
+}
+
+.premium-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.premium-card::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.premium-card:hover {
+  transform: translateY(-12px) scale(1.03);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.premium-card:hover::before {
+  opacity: 1;
+}
+
+.premium-card:hover::after {
+  transform: scaleX(1);
+}
+
+/* Card color variants based on status */
+.premium-card.vacant::after {
+  background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.premium-card.partial::after {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.premium-card.full::after {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+/* Card click effect */
+.premium-card:active {
+  transform: translateY(-2px) scale(0.98);
+  box-shadow: 0 8px 15px -8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+/* Card entrance animation */
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(25px);
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.premium-card:nth-child(1) {
+  animation: cardEntrance 0.4s ease-out 0.1s both;
+}
+.premium-card:nth-child(2) {
+  animation: cardEntrance 0.4s ease-out 0.2s both;
+}
+.premium-card:nth-child(3) {
+  animation: cardEntrance 0.4s ease-out 0.3s both;
+}
+.premium-card:nth-child(4) {
+  animation: cardEntrance 0.4s ease-out 0.4s both;
+}
+.premium-card:nth-child(5) {
+  animation: cardEntrance 0.4s ease-out 0.5s both;
+}
+.premium-card:nth-child(6) {
+  animation: cardEntrance 0.4s ease-out 0.6s both;
+}
+.premium-card:nth-child(7) {
+  animation: cardEntrance 0.4s ease-out 0.7s both;
+}
+.premium-card:nth-child(8) {
+  animation: cardEntrance 0.4s ease-out 0.8s both;
+}
+
+/* Card Header */
+.premium-card-header {
+  padding: 1.5rem;
+  position: relative;
+  z-index: 2;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.premium-card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+  position: relative;
+  display: inline-block;
+}
+
+.premium-card-title::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 40px;
+  height: 3px;
+  background: linear-gradient(90deg, #6366f1, #4f46e5);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.premium-card:hover .premium-card-title::after {
+  width: 100%;
+}
+
+.premium-card-subtitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.premium-card-info {
+  display: flex;
+  align-items: center;
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.375rem 0.75rem;
+  background-color: rgba(241, 245, 249, 0.7);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.premium-card:hover .premium-card-info {
+  background-color: rgba(224, 231, 255, 0.7);
+  transform: translateY(-2px);
+}
+
+.premium-card-icon {
+  margin-right: 0.5rem;
+  color: #6366f1;
+  transition: all 0.4s ease;
+}
+
+.premium-card:hover .premium-card-icon {
+  transform: scale(1.3) rotate(10deg);
+  color: #4f46e5;
+}
+
+/* Card Body */
+.premium-card-body {
+  padding: 1.5rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(249, 250, 251, 0.5) 100%
+  );
+}
+
+/* Amenities Section */
+.premium-card-amenities {
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.premium-card-amenities::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  width: 30px;
+  height: 30px;
+  border-top: 2px solid rgba(99, 102, 241, 0.2);
+  border-left: 2px solid rgba(99, 102, 241, 0.2);
+  border-top-left-radius: 8px;
+  opacity: 0;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  transform: scale(0.8);
+}
+
+.premium-card:hover .premium-card-amenities::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.premium-card-amenities-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px dashed rgba(99, 102, 241, 0.2);
+}
+
+.premium-card-amenities-title-icon {
+  margin-right: 0.5rem;
+  color: #6366f1;
+  transition: transform 0.4s ease;
+}
+
+.premium-card:hover .premium-card-amenities-title-icon {
+  transform: rotate(360deg);
+}
+
+.premium-card-amenities-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+
+.premium-card-amenity {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #475569;
+  transition: all 0.4s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  transform: translateY(0);
+}
+
+.premium-card:hover .premium-card-amenity {
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  color: #4338ca;
+  transform: translateY(-3px);
+  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
+}
+
+.premium-card-amenity-icon {
+  margin-right: 0.375rem;
+  color: #6366f1;
+  transition: transform 0.4s ease;
+}
+
+.premium-card:hover .premium-card-amenity-icon {
+  transform: scale(1.2);
+  color: #4f46e5;
+}
+
+/* Status Section */
+.premium-card-status {
+  margin-top: auto;
+  padding: 1rem 0;
+  position: relative;
+}
+
+.premium-card-status::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 50px;
+  height: 50px;
+  background: radial-gradient(
+    circle,
+    rgba(99, 102, 241, 0.1) 0%,
+    rgba(99, 102, 241, 0) 70%
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  transform: scale(0);
+  transform-origin: bottom right;
+}
+
+.premium-card:hover .premium-card-status::before {
+  opacity: 1;
+  transform: scale(3);
+}
+
+.premium-status-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.premium-card:hover .premium-status-badge {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.premium-status-badge::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  transform: translateX(-100%);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.premium-status-vacant {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.premium-status-partial {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.premium-status-full {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+/* Card Actions */
+.premium-card-actions {
+  display: flex;
+  justify-content: space-between;
+  padding: 1.25rem;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.premium-card-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.625rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.premium-card-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(100%);
+  transition: transform 0.4s ease;
+  z-index: -1;
+}
+
+.premium-card-btn:hover::before {
+  transform: translateY(0);
+}
+
+.premium-card-btn-edit {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
+}
+
+.premium-card-btn-edit:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+}
+
+.premium-card-btn-delete {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);
+}
+
+.premium-card-btn-delete:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3);
+}
+
+.premium-card-btn-icon {
+  margin-right: 0.5rem;
+  transition: transform 0.4s ease;
+}
+
+.premium-card-btn:hover .premium-card-btn-icon {
+  transform: scale(1.2);
+}

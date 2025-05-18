@@ -1,0 +1,239 @@
+/* Rent Cards Styling */
+
+.rent-cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.rent-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.rent-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.rent-card-header {
+  padding: 1.25rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background: linear-gradient(135deg, #f0f9ff 0%, #e1f5fe 100%);
+}
+
+.rent-card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+}
+
+.rent-card-subtitle {
+  display: flex;
+  justify-content: space-between;
+  color: #4a5568;
+  font-size: 0.875rem;
+}
+
+.rent-card-body {
+  padding: 1.25rem;
+  flex-grow: 1;
+}
+
+.rent-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.rent-card-info-item {
+  display: flex;
+  align-items: center;
+}
+
+.rent-card-info-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.75rem;
+  color: #4299e1;
+}
+
+.rent-card-info-label {
+  font-size: 0.875rem;
+  color: #718096;
+  width: 80px;
+}
+
+.rent-card-info-value {
+  font-size: 0.875rem;
+  color: #2d3748;
+  font-weight: 500;
+  flex: 1;
+}
+
+.rent-card-amount {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: #f7fafc;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rent-card-amount-label {
+  font-size: 0.875rem;
+  color: #718096;
+}
+
+.rent-card-amount-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.rent-card-status {
+  margin-top: auto;
+  padding: 0.75rem 1.25rem;
+  text-align: center;
+}
+
+.rent-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.375rem 1rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  width: 100%;
+}
+
+.rent-status-paid {
+  background: linear-gradient(to right, #48bb78, #38a169);
+  color: white;
+}
+
+.rent-status-overdue {
+  background: linear-gradient(to right, #f56565, #e53e3e);
+  color: white;
+}
+
+.rent-status-pending {
+  background: linear-gradient(to right, #4299e1, #3182ce);
+  color: white;
+}
+
+.rent-status-partial {
+  background: linear-gradient(to right, #ed8936, #dd6b20);
+  color: white;
+}
+
+.rent-card-actions {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  background: #f9fafb;
+}
+
+.rent-card-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.rent-card-btn-pay {
+  background: linear-gradient(to right, #48bb78, #38a169);
+  color: white;
+}
+
+.rent-card-btn-pay:hover {
+  background: linear-gradient(to right, #38a169, #2f855a);
+}
+
+.rent-card-btn-details {
+  background: linear-gradient(to right, #3182ce, #2b6cb0);
+  color: white;
+}
+
+.rent-card-btn-details:hover {
+  background: linear-gradient(to right, #2b6cb0, #2c5282);
+}
+
+.rent-card-btn-icon {
+  margin-right: 0.375rem;
+}
+
+.rent-filter-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.rent-filter-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s ease;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.rent-filter-btn:hover {
+  background: #e2e8f0;
+}
+
+.rent-filter-btn.active {
+  background: #3b82f6;
+  color: white;
+}
+
+.rent-filter-btn-icon {
+  margin-right: 0.375rem;
+}
+
+.rent-filter-badge {
+  margin-left: 0.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 9999px;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .rent-cards-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .rent-filter-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
