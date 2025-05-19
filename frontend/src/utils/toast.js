@@ -3,10 +3,6 @@ import { toast } from "react-toastify";
 // List of routes where toasts should be suppressed
 const SUPPRESSED_ROUTES = ["/login", "/logout", "/register"];
 
-<<<<<<< HEAD
-// Use this function everywhere instead of direct toast calls
-export function showToast(message, options = {}, location) {
-=======
 // API error messages that should be replaced with a login message
 const API_ERROR_MESSAGES = [
   "Failed to fetch rooms",
@@ -59,8 +55,6 @@ export function showToast(message, options = {}, location) {
     }
     return;
   }
-
->>>>>>> chenna
   // If on a suppressed route and not a login/register toast, do not show
   if (
     location &&
@@ -69,10 +63,6 @@ export function showToast(message, options = {}, location) {
   ) {
     return;
   }
-<<<<<<< HEAD
-  toast(message, options);
-} 
-=======
 
   // For normal toasts, use the provided options
   toast(message, {
@@ -81,4 +71,3 @@ export function showToast(message, options = {}, location) {
     ...(message === "Login successful!" ? { toastId: "login-success" } : {}),
   });
 }
->>>>>>> chenna

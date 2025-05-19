@@ -34,15 +34,11 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
   const navLinks = [
     { path: "/dashboard", icon: FaHome, label: "Dashboard" },
     { path: "/rooms", icon: FaBed, label: "Rooms" },
-<<<<<<< HEAD
-    { path: "/rent-management", icon: FaMoneyBillWave, label: "Rent Management" },
-=======
     {
       path: "/rent-management",
       icon: FaMoneyBillWave,
       label: "Rent Management",
     },
->>>>>>> chenna
     { path: "/tenants", icon: FaUsers, label: "Tenants" },
   ];
 
@@ -64,13 +60,9 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
               <Link
                 key={link.path}
                 to={link.path}
-<<<<<<< HEAD
-                className={`nav-link ${location.pathname === link.path ? 'active' : ''}`}
-=======
                 className={`nav-link ${
                   location.pathname === link.path ? "active" : ""
                 }`}
->>>>>>> chenna
               >
                 <link.icon size={16} className="nav-link-icon" />
                 <span>{link.label}</span>
@@ -92,15 +84,10 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                   <FaUserCircle size={20} />
                 </div>
                 <div className="profile-text">
-<<<<<<< HEAD
-                  <span className="profile-name">{admin?.name || 'User'}</span>
-                  <span className="profile-pg">{admin?.pgName || 'PG Name'}</span>
-=======
                   <span className="profile-name">{admin?.name || "User"}</span>
                   <span className="profile-pg">
                     {admin?.pgName || "PG Name"}
                   </span>
->>>>>>> chenna
                 </div>
               </div>
             </button>
@@ -108,15 +95,10 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
             {dropdownOpen && (
               <div className="profile-menu">
                 <div className="profile-menu-header">
-<<<<<<< HEAD
-                  <p className="profile-menu-name">{admin?.name || 'User'}</p>
-                  <p className="profile-menu-email">{admin?.email || 'user@example.com'}</p>
-=======
                   <p className="profile-menu-name">{admin?.name || "User"}</p>
                   <p className="profile-menu-email">
                     {admin?.email || "user@example.com"}
                   </p>
->>>>>>> chenna
                 </div>
                 <div className="profile-menu-items">
                   <Link to="/profile" className="profile-menu-item">
@@ -127,14 +109,10 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                     <FaCog size={14} />
                     <span>Settings</span>
                   </Link>
-<<<<<<< HEAD
-                  <button onClick={logout} className="profile-menu-item logout-button">
-=======
                   <button
                     onClick={logout}
                     className="profile-menu-item logout-button"
                   >
->>>>>>> chenna
                     <FaSignOutAlt size={14} />
                     <span>Sign out</span>
                   </button>

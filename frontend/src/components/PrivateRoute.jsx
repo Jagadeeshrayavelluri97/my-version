@@ -1,13 +1,3 @@
-<<<<<<< HEAD
-import React from 'react'
-import { Navigate } from 'react-router-dom'
-
-const PrivateRoute = ({ children, isAuthenticated }) => {
-  return isAuthenticated ? children : <Navigate to="/login" />
-}
-
-export default PrivateRoute
-=======
 import React, { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { showToast } from "../utils/toast";
@@ -45,4 +35,3 @@ const PrivateRoute = ({ children, isAuthenticated }) => {
 };
 
 export default PrivateRoute;
->>>>>>> chenna

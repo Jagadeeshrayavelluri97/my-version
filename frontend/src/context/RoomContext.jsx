@@ -18,10 +18,7 @@ function isAuthPage(location) {
 export const RoomProvider = ({ children }) => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
-<<<<<<< HEAD
-=======
   const [initialized, setInitialized] = useState(false);
->>>>>>> chenna
   const location = useLocation();
 
   // Fetch rooms on component mount
@@ -33,27 +30,16 @@ export const RoomProvider = ({ children }) => {
   const fetchRooms = async () => {
     setLoading(true);
     try {
-<<<<<<< HEAD
-      const res = await axios.get('/rooms');
-      if (res.data.success) {
-        setRooms(res.data.data);
-=======
       const res = await axios.get("/rooms");
       if (res.data.success) {
         setRooms(res.data.data);
         setInitialized(true);
->>>>>>> chenna
       } else {
         setRooms([]);
       }
       setLoading(false);
     } catch (err) {
       console.error("Error fetching rooms:", err);
-<<<<<<< HEAD
-      if (!isAuthPage(location)) {
-        showToast("Failed to fetch rooms", { type: "error" }, location);
-      }
-=======
       // Don't show error messages on login/register pages
       if (!isAuthPage(location)) {
         // If unauthorized, don't show the error toast as it will be handled by the API interceptor
@@ -62,7 +48,6 @@ export const RoomProvider = ({ children }) => {
         }
       }
       setRooms([]);
->>>>>>> chenna
       setLoading(false);
     }
   };
@@ -70,11 +55,7 @@ export const RoomProvider = ({ children }) => {
   // Add a new room
   const addRoom = async (roomData) => {
     try {
-<<<<<<< HEAD
-      const res = await axios.post('/rooms', roomData);
-=======
       const res = await axios.post("/rooms", roomData);
->>>>>>> chenna
       if (res.data.success) {
         setRooms([...rooms, res.data.data]);
         showToast("Room created successfully", { type: "success" }, location);
@@ -83,15 +64,11 @@ export const RoomProvider = ({ children }) => {
       return false;
     } catch (err) {
       console.error("Error adding room:", err);
-<<<<<<< HEAD
-      showToast(err.response?.data?.error || "Failed to create room", { type: "error" }, location);
-=======
       showToast(
         err.response?.data?.error || "Failed to create room",
         { type: "error" },
         location
       );
->>>>>>> chenna
       return false;
     }
   };
@@ -102,13 +79,9 @@ export const RoomProvider = ({ children }) => {
       const res = await axios.put(`/rooms/${id}`, roomData);
       if (res.data.success) {
         setRooms(
-<<<<<<< HEAD
-          rooms.map((room) => (room._id === id ? { ...room, ...res.data.data } : room))
-=======
           rooms.map((room) =>
             room._id === id ? { ...room, ...res.data.data } : room
           )
->>>>>>> chenna
         );
         showToast("Room updated successfully", { type: "success" }, location);
         return true;
@@ -116,15 +89,11 @@ export const RoomProvider = ({ children }) => {
       return false;
     } catch (err) {
       console.error("Error updating room:", err);
-<<<<<<< HEAD
-      showToast(err.response?.data?.error || "Failed to update room", { type: "error" }, location);
-=======
       showToast(
         err.response?.data?.error || "Failed to update room",
         { type: "error" },
         location
       );
->>>>>>> chenna
       return false;
     }
   };
@@ -141,15 +110,11 @@ export const RoomProvider = ({ children }) => {
       return false;
     } catch (err) {
       console.error("Error deleting room:", err);
-<<<<<<< HEAD
-      showToast(err.response?.data?.error || "Failed to delete room", { type: "error" }, location);
-=======
       showToast(
         err.response?.data?.error || "Failed to delete room",
         { type: "error" },
         location
       );
->>>>>>> chenna
       return false;
     }
   };
@@ -164,10 +129,7 @@ export const RoomProvider = ({ children }) => {
       value={{
         rooms,
         loading,
-<<<<<<< HEAD
-=======
         initialized,
->>>>>>> chenna
         fetchRooms,
         addRoom,
         updateRoom,

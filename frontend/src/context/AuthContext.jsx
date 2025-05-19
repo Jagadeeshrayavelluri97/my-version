@@ -15,10 +15,6 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const location = useLocation();
 
-<<<<<<< HEAD
-  useEffect(() => {
-    // Check if user is logged in using localStorage
-=======
   // Function to check if we're currently refreshing the page
   const isPageRefreshing = () => {
     return (
@@ -29,22 +25,10 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check if user is logged in using localStorage and validate token
->>>>>>> chenna
     const checkLoggedIn = async () => {
       try {
         const token = localStorage.getItem("token");
         const adminData = localStorage.getItem("adminData");
-<<<<<<< HEAD
-
-        if (token && adminData) {
-          setAdmin(JSON.parse(adminData));
-          setIsAuthenticated(true);
-        }
-      } catch (err) {
-        console.error("Error checking authentication:", err);
-        localStorage.removeItem("token");
-        localStorage.removeItem("adminData");
-=======
         const tokenTimestamp = localStorage.getItem("tokenTimestamp");
         const currentTime = new Date().getTime();
 
@@ -107,14 +91,11 @@ export const AuthProvider = ({ children }) => {
           setAdmin(null);
           setIsAuthenticated(false);
         }
->>>>>>> chenna
       }
 
       setLoading(false);
     };
 
-<<<<<<< HEAD
-=======
     // Function to validate token with API
     const validateToken = async (token, adminData) => {
       try {
@@ -157,8 +138,6 @@ export const AuthProvider = ({ children }) => {
         }
       }
     };
-
->>>>>>> chenna
     checkLoggedIn();
   }, []);
 
@@ -174,17 +153,11 @@ export const AuthProvider = ({ children }) => {
 
       if (response.data.success) {
         const { token, admin: newAdmin } = response.data;
-<<<<<<< HEAD
-
-        localStorage.setItem("token", token);
-        localStorage.setItem("adminData", JSON.stringify(newAdmin));
-=======
         const currentTime = new Date().getTime();
 
         localStorage.setItem("token", token);
         localStorage.setItem("adminData", JSON.stringify(newAdmin));
         localStorage.setItem("tokenTimestamp", currentTime.toString());
->>>>>>> chenna
 
         setAdmin(newAdmin);
         setIsAuthenticated(true);
@@ -195,15 +168,11 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error("Registration error:", err);
       setError(err.response?.data?.error || "Registration failed");
-<<<<<<< HEAD
-      showToast(err.response?.data?.error || "Registration failed", {}, location);
-=======
       showToast(
         err.response?.data?.error || "Registration failed",
         {},
         location
       );
->>>>>>> chenna
     }
 
     setLoading(false);
@@ -221,17 +190,11 @@ export const AuthProvider = ({ children }) => {
 
       if (response.data.success) {
         const { token, admin: loggedInAdmin } = response.data;
-<<<<<<< HEAD
-
-        localStorage.setItem("token", token);
-        localStorage.setItem("adminData", JSON.stringify(loggedInAdmin));
-=======
         const currentTime = new Date().getTime();
 
         localStorage.setItem("token", token);
         localStorage.setItem("adminData", JSON.stringify(loggedInAdmin));
         localStorage.setItem("tokenTimestamp", currentTime.toString());
->>>>>>> chenna
 
         setAdmin(loggedInAdmin);
         setIsAuthenticated(true);
@@ -252,14 +215,10 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("adminData");
-<<<<<<< HEAD
-=======
     localStorage.removeItem("tokenTimestamp");
 
     // Clear auth header
     delete api.defaults.headers.common["Authorization"];
-
->>>>>>> chenna
     setAdmin(null);
     setIsAuthenticated(false);
     showToast("Logged out successfully", {}, location);
@@ -290,15 +249,11 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error("Profile update error:", err);
       setError(err.response?.data?.error || "Profile update failed");
-<<<<<<< HEAD
-      showToast(err.response?.data?.error || "Profile update failed", {}, location);
-=======
       showToast(
         err.response?.data?.error || "Profile update failed",
         {},
         location
       );
->>>>>>> chenna
       return false;
     } finally {
       setLoading(false);
@@ -322,15 +277,11 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error("Password update error:", err);
       setError(err.response?.data?.error || "Password update failed");
-<<<<<<< HEAD
-      showToast(err.response?.data?.error || "Password update failed", {}, location);
-=======
       showToast(
         err.response?.data?.error || "Password update failed",
         {},
         location
       );
->>>>>>> chenna
       return false;
     } finally {
       setLoading(false);

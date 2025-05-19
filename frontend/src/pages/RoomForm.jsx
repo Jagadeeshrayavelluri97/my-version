@@ -1,25 +1,15 @@
 import React, { useState, useEffect } from "react";
-<<<<<<< HEAD
-import { useParams, useNavigate } from "react-router-dom";
-import { FaSave, FaArrowLeft } from "react-icons/fa";
-import { useRooms } from "../context/RoomContext";
-import AmenitiesSelector from "../components/AmenitiesSelector";
-=======
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { FaSave, FaArrowLeft } from "react-icons/fa";
 import { useRooms } from "../context/RoomContext";
 import AmenitiesSelector from "../components/AmenitiesSelector";
 import axios from "axios";
 import { showToast } from "../utils/toast";
->>>>>>> chenna
 
 const RoomForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-<<<<<<< HEAD
-=======
   const location = useLocation();
->>>>>>> chenna
   const isEditMode = !!id;
   const {
     rooms,
@@ -61,18 +51,6 @@ const RoomForm = () => {
       return;
     }
 
-<<<<<<< HEAD
-    if (!initialized) {
-      return;
-    }
-
-    if (roomsLoading) {
-      return;
-    }
-
-    const room = getRoom(id);
-    if (room) {
-=======
     // If rooms are still loading or context not initialized, wait
     if (roomsLoading || !initialized) {
       console.log("Waiting for rooms to load or context to initialize...");
@@ -83,7 +61,6 @@ const RoomForm = () => {
     const room = getRoom(id);
     if (room) {
       console.log("Room found in context:", room);
->>>>>>> chenna
       setFormData({
         floorNumber: room.floorNumber,
         roomNumber: room.roomNumber,
@@ -94,12 +71,6 @@ const RoomForm = () => {
       });
       setFetchLoading(false);
     } else if (!triedFetch) {
-<<<<<<< HEAD
-      fetchRooms();
-      setTriedFetch(true);
-    }
-  }, [id, isEditMode, getRoom, roomsLoading, fetchRooms, initialized, triedFetch]);
-=======
       // If room not found and we haven't tried fetching yet, try direct API call
       console.log("Room not found, trying direct API call...");
 
@@ -150,7 +121,6 @@ const RoomForm = () => {
     triedFetch,
     location,
   ]);
->>>>>>> chenna
 
   useEffect(() => {
     setTriedFetch(false);
@@ -198,26 +168,14 @@ const RoomForm = () => {
       setLoading(false);
       alert(
         err?.response?.data?.error ||
-<<<<<<< HEAD
-        err?.message ||
-        "Failed to save room. Please try again."
-=======
           err?.message ||
           "Failed to save room. Please try again."
->>>>>>> chenna
       );
       console.error("Error saving room:", err);
     }
   };
 
   // Show loading spinner only if rooms are loading (add mode) or if fetching room (edit mode)
-<<<<<<< HEAD
-  if ((!isEditMode && roomsLoading) || (isEditMode && (fetchLoading || roomsLoading))) {
-    return (
-      <div className="flex flex-col justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-        <p className="text-gray-600">Loading room data...</p>
-=======
   if (
     (!isEditMode && roomsLoading) ||
     (isEditMode && (fetchLoading || roomsLoading))
@@ -234,7 +192,6 @@ const RoomForm = () => {
           {roomsLoading ? "Fetching rooms..." : ""}
           {fetchLoading ? "Preparing form..." : ""}
         </p>
->>>>>>> chenna
       </div>
     );
   }
@@ -243,15 +200,6 @@ const RoomForm = () => {
   if (isEditMode && !roomsLoading && !fetchLoading && !getRoom(id)) {
     return (
       <div className="flex flex-col justify-center items-center h-64">
-<<<<<<< HEAD
-        <p className="text-red-600 text-lg font-semibold">Room not found.</p>
-        <button
-          onClick={() => navigate('/rooms')}
-          className="btn btn-secondary mt-4"
-        >
-          Back to Rooms
-        </button>
-=======
         <p className="text-red-600 text-lg font-semibold">Room not found</p>
         <p className="text-gray-600 mt-2 mb-4 text-center">
           The room you're trying to edit may have been deleted or doesn't exist.
@@ -272,7 +220,6 @@ const RoomForm = () => {
             Add New Room
           </button>
         </div>
->>>>>>> chenna
       </div>
     );
   }
