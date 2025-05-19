@@ -4,10 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build --mode production",
-    "build:dev": "vite build --mode development",
-    "preview": "vite preview"
+    "build": "vite build --mode production --debug",
+    "build:dev": "vite build --mode development --debug"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",
