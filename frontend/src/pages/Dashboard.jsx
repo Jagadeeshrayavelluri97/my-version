@@ -57,11 +57,20 @@ const Dashboard = () => {
     } catch (err) {
       console.error("Error fetching dashboard stats:", err);
       if (err.response && err.response.status === 401) {
+<<<<<<< HEAD
         showToast("You need to login first", { force: true, type: "error" }, location);
         // Optionally redirect to login page
         // navigate("/login");
       } else {
         showToast("Failed to load dashboard data", location);
+=======
+        // Clear token and redirect to login page
+        localStorage.removeItem("token");
+        localStorage.removeItem("adminData");
+        navigate("/login");
+      } else {
+        showToast("Failed to load dashboard data", { type: "error" }, location);
+>>>>>>> chenna
       }
       // Set default values if fetch fails
       setStats({

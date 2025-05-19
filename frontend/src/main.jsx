@@ -31,7 +31,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
+<<<<<<< HEAD
         <ToastContainer position="top-right" autoClose={3000} />
+=======
+>>>>>>> chenna
         <App />
       </AuthProvider>
     </BrowserRouter>

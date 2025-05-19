@@ -42,7 +42,7 @@ Add the following environment variables in the Render dashboard:
 
 ### 4. Deploy the Backend
 
-Click "Create Web Service" and wait for the deployment to complete. Render will provide you with a URL for your backend API (e.g., https://pg-management-system-api.onrender.com).
+Click "Create Web Service" and wait for the deployment to complete. Render will provide you with a URL for your backend API (e.g., https://my-version-d2dd.onrender.com).
 
 ### 5. Test the Backend
 
@@ -72,7 +72,7 @@ Make sure your frontend code is ready for deployment:
    - Build Command: npm run build
    - Output Directory: dist
 4. Add environment variables:
-   - `VITE_API_URL`: Your Render backend URL (e.g., https://pg-management-system-api.onrender.com)
+   - `VITE_API_URL`: Your Render backend URL (e.g., https://my-version-d2dd.onrender.com)
 5. Click "Deploy" and wait for the deployment to complete
 
 #### Option 2: Using the Vercel CLI

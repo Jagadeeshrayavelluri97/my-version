@@ -1,5 +1,9 @@
 import axios from "axios";
 import { toast } from "react-toastify";
+<<<<<<< HEAD
+=======
+import { showToast } from "./toast";
+>>>>>>> chenna
 
 // Set base URL
 const API_URL =
@@ -20,6 +24,32 @@ console.log("API URL:", axios.defaults.baseURL);
 console.log("Environment:", import.meta.env.MODE);
 console.log("Sample full URL:", `${axios.defaults.baseURL}/admin/login`);
 
+<<<<<<< HEAD
+=======
+// Global flag to track if we're currently refreshing the page
+// This helps prevent redirect loops during page refresh
+if (typeof window !== "undefined") {
+  window.isPageRefreshing = window.isPageRefreshing || false;
+
+  // Set the flag to true when the page is refreshing
+  window.addEventListener("beforeunload", () => {
+    window.isPageRefreshing = true;
+    // Store this in sessionStorage so it persists across the refresh
+    sessionStorage.setItem("isRefreshing", "true");
+  });
+
+  // Check if we're coming from a refresh
+  if (sessionStorage.getItem("isRefreshing") === "true") {
+    window.isPageRefreshing = true;
+    // Clear the flag after a short delay
+    setTimeout(() => {
+      window.isPageRefreshing = false;
+      sessionStorage.removeItem("isRefreshing");
+    }, 2000);
+  }
+}
+
+>>>>>>> chenna
 // Add a request interceptor
 axios.interceptors.request.use(
   (config) => {
@@ -56,6 +86,7 @@ axios.interceptors.response.use(
 
     // Handle 401 Unauthorized errors
     if (error.response && error.response.status === 401) {
+<<<<<<< HEAD
       // If not on login or register page, clear token and redirect
       if (
         !window.location.pathname.includes("/login") &&
@@ -64,6 +95,66 @@ axios.interceptors.response.use(
         localStorage.removeItem("token");
         window.location.href = "/login";
         toast.error("Session expired. Please login again.");
+=======
+      // Check if we're currently refreshing the page
+      // If so, don't redirect or clear tokens yet
+      if (window.isPageRefreshing) {
+        console.log("Page is refreshing, not redirecting for 401 error");
+        return Promise.reject(error);
+      }
+
+      // Check if we've already handled a 401 error recently to prevent multiple redirects
+      const lastAuthErrorTime = localStorage.getItem("lastAuthErrorTime");
+      const currentTime = new Date().getTime();
+
+      // Only handle the error if it's been more than 3 seconds since the last one
+      // or if there's no record of a previous error
+      if (
+        !lastAuthErrorTime ||
+        currentTime - parseInt(lastAuthErrorTime) > 3000
+      ) {
+        localStorage.setItem("lastAuthErrorTime", currentTime.toString());
+
+        // If not on login or register page, clear token and redirect
+        if (
+          !window.location.pathname.includes("/login") &&
+          !window.location.pathname.includes("/register")
+        ) {
+          // Check if we have a token before clearing
+          const hasToken = localStorage.getItem("token");
+
+          if (!hasToken) {
+            console.log("No token found, skipping logout process");
+            return Promise.reject(error);
+          }
+
+          // Clear auth data
+          localStorage.removeItem("token");
+          localStorage.removeItem("adminData");
+          localStorage.removeItem("tokenTimestamp");
+
+          // Use the current location to pass to showToast
+          const currentLocation = { pathname: window.location.pathname };
+
+          // Show toast before redirect to ensure it's seen
+          showToast(
+            "Session expired. Please login again.",
+            { type: "error" },
+            currentLocation
+          );
+
+          // Small delay before redirect to allow toast to be shown
+          setTimeout(() => {
+            window.location.href = "/login";
+          }, 500);
+        } else if (window.location.pathname.includes("/login")) {
+          // If on login page, use the location object for proper handling
+          const loginLocation = { pathname: "/login" };
+          showToast("Please login first", { type: "info" }, loginLocation);
+        }
+      } else {
+        console.log("Ignoring duplicate 401 error");
+>>>>>>> chenna
       }
     }
 
@@ -100,11 +191,21 @@ export const createRoom = async (roomData) => {
   try {
     console.log("Creating room with data:", roomData);
     const response = await axios.post("/rooms", roomData);
+<<<<<<< HEAD
     toast.success("Room created successfully");
     return response;
   } catch (error) {
     console.error("Error creating room:", error);
     toast.error(error.response?.data?.error || "Failed to create room");
+=======
+    showToast("Room created successfully", { type: "success" });
+    return response;
+  } catch (error) {
+    console.error("Error creating room:", error);
+    showToast(error.response?.data?.error || "Failed to create room", {
+      type: "error",
+    });
+>>>>>>> chenna
     throw error;
   }
 };
@@ -113,11 +214,21 @@ export const updateRoom = async (id, roomData) => {
   try {
     console.log("Updating room with id:", id, "data:", roomData);
     const response = await axios.put(`/rooms/${id}`, roomData);
+<<<<<<< HEAD
     toast.success("Room updated successfully");
     return response;
   } catch (error) {
     console.error(`Error updating room ${id}:`, error);
     toast.error(error.response?.data?.error || "Failed to update room");
+=======
+    showToast("Room updated successfully", { type: "success" });
+    return response;
+  } catch (error) {
+    console.error(`Error updating room ${id}:`, error);
+    showToast(error.response?.data?.error || "Failed to update room", {
+      type: "error",
+    });
+>>>>>>> chenna
     throw error;
   }
 };
@@ -126,11 +237,21 @@ export const deleteRoom = async (id) => {
   try {
     console.log("Deleting room with id:", id);
     const response = await axios.delete(`/rooms/${id}`);
+<<<<<<< HEAD
     toast.success("Room deleted successfully");
     return response;
   } catch (error) {
     console.error(`Error deleting room ${id}:`, error);
     toast.error(error.response?.data?.error || "Failed to delete room");
+=======
+    showToast("Room deleted successfully", { type: "success" });
+    return response;
+  } catch (error) {
+    console.error(`Error deleting room ${id}:`, error);
+    showToast(error.response?.data?.error || "Failed to delete room", {
+      type: "error",
+    });
+>>>>>>> chenna
     throw error;
   }
 };
@@ -162,11 +283,21 @@ export const createTenant = async (tenantData) => {
   try {
     console.log("Creating tenant with data:", tenantData);
     const response = await axios.post("/tenants", tenantData);
+<<<<<<< HEAD
     toast.success("Tenant created successfully");
     return response;
   } catch (error) {
     console.error("Error creating tenant:", error);
     toast.error(error.response?.data?.error || "Failed to create tenant");
+=======
+    showToast("Tenant created successfully", { type: "success" });
+    return response;
+  } catch (error) {
+    console.error("Error creating tenant:", error);
+    showToast(error.response?.data?.error || "Failed to create tenant", {
+      type: "error",
+    });
+>>>>>>> chenna
     throw error;
   }
 };
@@ -175,11 +306,21 @@ export const updateTenant = async (id, tenantData) => {
   try {
     console.log("Updating tenant with id:", id, "data:", tenantData);
     const response = await axios.put(`/tenants/${id}`, tenantData);
+<<<<<<< HEAD
     toast.success("Tenant updated successfully");
     return response;
   } catch (error) {
     console.error(`Error updating tenant ${id}:`, error);
     toast.error(error.response?.data?.error || "Failed to update tenant");
+=======
+    showToast("Tenant updated successfully", { type: "success" });
+    return response;
+  } catch (error) {
+    console.error(`Error updating tenant ${id}:`, error);
+    showToast(error.response?.data?.error || "Failed to update tenant", {
+      type: "error",
+    });
+>>>>>>> chenna
     throw error;
   }
 };
@@ -188,11 +329,21 @@ export const deleteTenant = async (id) => {
   try {
     console.log("Deleting tenant with id:", id);
     const response = await axios.delete(`/tenants/${id}`);
+<<<<<<< HEAD
     toast.success("Tenant deleted successfully");
     return response;
   } catch (error) {
     console.error(`Error deleting tenant ${id}:`, error);
     toast.error(error.response?.data?.error || "Failed to delete tenant");
+=======
+    showToast("Tenant deleted successfully", { type: "success" });
+    return response;
+  } catch (error) {
+    console.error(`Error deleting tenant ${id}:`, error);
+    showToast(error.response?.data?.error || "Failed to delete tenant", {
+      type: "error",
+    });
+>>>>>>> chenna
     throw error;
   }
 };
@@ -224,11 +375,21 @@ export const createRent = async (rentData) => {
   try {
     console.log("Creating rent with data:", rentData);
     const response = await axios.post("/rents", rentData);
+<<<<<<< HEAD
     toast.success("Rent record created successfully");
     return response;
   } catch (error) {
     console.error("Error creating rent record:", error);
     toast.error(error.response?.data?.error || "Failed to create rent record");
+=======
+    showToast("Rent record created successfully", { type: "success" });
+    return response;
+  } catch (error) {
+    console.error("Error creating rent record:", error);
+    showToast(error.response?.data?.error || "Failed to create rent record", {
+      type: "error",
+    });
+>>>>>>> chenna
     throw error;
   }
 };
@@ -237,11 +398,21 @@ export const updateRent = async (id, rentData) => {
   try {
     console.log("Updating rent with id:", id, "data:", rentData);
     const response = await axios.put(`/rents/${id}`, rentData);
+<<<<<<< HEAD
     toast.success("Rent record updated successfully");
     return response;
   } catch (error) {
     console.error(`Error updating rent ${id}:`, error);
     toast.error(error.response?.data?.error || "Failed to update rent record");
+=======
+    showToast("Rent record updated successfully", { type: "success" });
+    return response;
+  } catch (error) {
+    console.error(`Error updating rent ${id}:`, error);
+    showToast(error.response?.data?.error || "Failed to update rent record", {
+      type: "error",
+    });
+>>>>>>> chenna
     throw error;
   }
 };
@@ -250,11 +421,21 @@ export const deleteRent = async (id) => {
   try {
     console.log("Deleting rent with id:", id);
     const response = await axios.delete(`/rents/${id}`);
+<<<<<<< HEAD
     toast.success("Rent record deleted successfully");
     return response;
   } catch (error) {
     console.error(`Error deleting rent ${id}:`, error);
     toast.error(error.response?.data?.error || "Failed to delete rent record");
+=======
+    showToast("Rent record deleted successfully", { type: "success" });
+    return response;
+  } catch (error) {
+    console.error(`Error deleting rent ${id}:`, error);
+    showToast(error.response?.data?.error || "Failed to delete rent record", {
+      type: "error",
+    });
+>>>>>>> chenna
     throw error;
   }
 };

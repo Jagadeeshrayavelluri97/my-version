@@ -91,8 +91,17 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                 <FaUserCircle className="h-6 w-6 text-white" />
               </div>
               <div className="ml-3">
+<<<<<<< HEAD
                 <p className="text-sm font-medium text-white">{admin?.name || 'User'}</p>
                 <p className="text-xs text-indigo-300">{admin?.pgName || 'PG Name'}</p>
+=======
+                <p className="text-sm font-medium text-white">
+                  {admin?.name || "User"}
+                </p>
+                <p className="text-xs text-indigo-300">
+                  {admin?.pgName || "PG Name"}
+                </p>
+>>>>>>> chenna
               </div>
             </div>
           </div>

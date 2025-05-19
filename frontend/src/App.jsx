@@ -42,7 +42,22 @@ function App() {
     <RoomProvider>
       <TenantProvider>
         <div className="app">
+<<<<<<< HEAD
           <ToastContainer position="top-right" />
+=======
+          <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={true}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            limit={1}
+          />
+>>>>>>> chenna
           <Routes>
             {/* Public Routes */}
             <Route
