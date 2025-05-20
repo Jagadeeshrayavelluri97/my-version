@@ -42,6 +42,10 @@ const TenantSchema = new mongoose.Schema({
     ref: 'Room',
     required: true
   },
+  bedNumber: {
+    type: Number,
+    required: [true, 'Please specify bed number']
+  },
   adminId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin',

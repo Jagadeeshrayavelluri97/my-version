@@ -14,6 +14,7 @@ import {
   FaUserFriends,
   FaInfoCircle,
   FaCheckCircle,
+  FaBed,
 } from "react-icons/fa";
 import { showToast } from "../utils/toast";
 import { useRooms } from "../context/RoomContext";
@@ -29,9 +30,10 @@ const TenantForm = () => {
   const { rooms, loading: roomsLoading } = useRooms();
   const { addTenant, updateTenant, getTenant, getTenantsByRoom } = useTenants();
 
-  // Get roomId from URL query parameter if available
+  // Get parameters from URL query parameters if available
   const queryParams = new URLSearchParams(location.search);
   const preselectedRoomId = queryParams.get("roomId");
+  const preselectedBedNumber = queryParams.get("bedNumber");
   const returnToRoom = queryParams.get("returnToRoom") === "true";
 
   // Check if preselected room has capacity when component mounts
@@ -78,6 +80,7 @@ const TenantForm = () => {
     idProofNumber: "",
     occupation: "",
     roomId: preselectedRoomId || "",
+    bedNumber: preselectedBedNumber || "",
     joiningDate: new Date().toISOString().split("T")[0],
     active: true,
   });
@@ -95,6 +98,7 @@ const TenantForm = () => {
     idProofNumber,
     occupation,
     roomId,
+    bedNumber,
     joiningDate,
     active,
   } = formData;
@@ -412,6 +416,53 @@ const TenantForm = () => {
                   ))}
                 </select>
               </div>
+
+              {roomId && (
+                <div className="premium-tenant-form-group">
+                  <label htmlFor="bedNumber" className="premium-tenant-form-label">
+                    <FaBed className="inline-block mr-2" /> Bed Number
+                  </label>
+                  <select
+                    id="bedNumber"
+                    name="bedNumber"
+                    value={bedNumber}
+                    onChange={onChange}
+                    className={`premium-tenant-form-select ${
+                      preselectedBedNumber ? "border-green-500 bg-green-50" : ""
+                    }`}
+                    required
+                    style={{
+                      transition: "all 0.3s ease",
+                      borderColor: preselectedBedNumber ? "#10b981" : "",
+                      boxShadow: preselectedBedNumber
+                        ? "0 0 0 3px rgba(16, 185, 129, 0.1)"
+                        : "",
+                    }}
+                  >
+                    <option value="">Select a bed</option>
+                    {roomId && rooms.find(r => r._id === roomId) &&
+                      Array.from({ length: rooms.find(r => r._id === roomId).capacity }, (_, i) => {
+                        // Check if this bed is already occupied by another tenant
+                        const selectedRoom = rooms.find(r => r._id === roomId);
+                        const roomTenants = getTenantsByRoom(roomId);
+                        const isBedOccupied = roomTenants.some(
+                          tenant => tenant.bedNumber === (i+1) && (!isEditMode || tenant._id !== id)
+                        );
+
+                        return (
+                          <option
+                            key={i+1}
+                            value={i+1}
+                            disabled={isBedOccupied}
+                          >
+                            Bed {i+1} {isBedOccupied ? '(Occupied)' : ''}
+                          </option>
+                        );
+                      })
+                    }
+                  </select>
+                </div>
+              )}
 
               <div className="premium-tenant-form-group">
                 <label

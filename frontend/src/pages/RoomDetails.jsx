@@ -38,12 +38,11 @@ import { useTenants } from "../context/TenantContext";
 const RoomDetails = ({ roomProp, isModal }) => {
   const { id: paramId } = useParams();
   const navigate = useNavigate();
-  const { rooms, loading: roomsLoading } = useRooms();
+  const { rooms, loading: roomsLoading, deleteRoom } = useRooms();
   const { tenants, loading: tenantsLoading, deleteTenant } = useTenants();
   const [room, setRoom] = useState(null);
   const [roomTenants, setRoomTenants] = useState([]);
   const id = roomProp?._id || paramId;
-  const [editBeds, setEditBeds] = useState(false);
 
   // Use a ref to track if we've already set the initial data
   const [isInitialized, setIsInitialized] = useState(false);
@@ -83,8 +82,11 @@ const RoomDetails = ({ roomProp, isModal }) => {
     setIsInitialized(true);
   }, [id, rooms, tenants, roomProp, roomsLoading, tenantsLoading]);
 
-  const handleAddTenant = () => {
-    navigate(`/tenants/add?roomId=${id}&returnToRoom=true`);
+  // Function to handle adding a tenant to the room
+  const handleAddTenant = (bedNumber = null) => {
+    // If a specific bed number is provided, include it in the URL
+    const bedParam = bedNumber ? `&bedNumber=${bedNumber}` : '';
+    navigate(`/tenants/add?roomId=${id}&returnToRoom=true${bedParam}`);
   };
 
   const handleDeleteTenant = async (tenantId) => {
@@ -140,13 +142,40 @@ const RoomDetails = ({ roomProp, isModal }) => {
     List: <FaListUl />,
   };
 
+  // Function to handle room deletion
+  const handleDeleteRoom = async () => {
+    if (window.confirm("Are you sure you want to delete this room?")) {
+      const success = await deleteRoom(id);
+      if (success) {
+        navigate("/rooms");
+      }
+    }
+  };
+
   // Function to render bed layout
   const renderBedLayout = () => {
     if (!room) return null;
 
+    // Create an array to track which beds are occupied
+    const occupiedBedMap = Array(room.capacity).fill(false);
+    const bedTenants = Array(room.capacity).fill(null);
+
+    // Use the bedNumber field from the tenant model to assign tenants to beds
+    roomTenants.forEach((tenant) => {
+      // Check if tenant has a bedNumber and it's within the room capacity
+      if (tenant.bedNumber && tenant.bedNumber <= room.capacity) {
+        // Beds are 1-indexed in the UI but 0-indexed in the array
+        const bedIndex = tenant.bedNumber - 1;
+        occupiedBedMap[bedIndex] = true;
+        bedTenants[bedIndex] = tenant;
+      }
+    });
+
     const beds = [];
     for (let i = 0; i < room.capacity; i++) {
-      const isOccupied = i < room.occupiedBeds;
+      const isOccupied = occupiedBedMap[i];
+      const tenant = bedTenants[i];
+
       beds.push(
         <div
           key={i}
@@ -156,62 +185,156 @@ const RoomDetails = ({ roomProp, isModal }) => {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            width: "80px",
-            height: "120px",
+            width: "140px",
+            height: "180px",
             margin: "10px",
-            borderRadius: "10px",
-            border: "2px solid",
+            borderRadius: "8px",
+            border: "1px solid",
             borderColor: isOccupied ? "#ef4444" : "#10b981",
             backgroundColor: isOccupied
-              ? "rgba(239, 68, 68, 0.1)"
-              : "rgba(16, 185, 129, 0.1)",
-            padding: "10px",
+              ? "#ffebeb" // Light red background for occupied beds
+              : "#e6fff5", // Light green background for vacant beds
+            boxShadow: isOccupied
+              ? "0 2px 8px rgba(239, 68, 68, 0.15)"
+              : "0 1px 3px rgba(0,0,0,0.05)",
+            padding: "15px 10px",
             position: "relative",
+            transition: "all 0.2s ease",
+            cursor: "pointer",
           }}
         >
           <FaBed
             size={30}
             color={isOccupied ? "#ef4444" : "#10b981"}
-            style={{ marginBottom: "5px" }}
+            style={{ marginBottom: "10px" }}
           />
           <span
             style={{
-              fontSize: "14px",
-              fontWeight: "bold",
+              fontSize: "16px",
+              fontWeight: "600",
               color: isOccupied ? "#ef4444" : "#10b981",
+              marginBottom: "4px",
             }}
           >
             Bed {i + 1}
           </span>
           <span
             style={{
-              fontSize: "12px",
+              fontSize: "14px",
               color: isOccupied ? "#ef4444" : "#10b981",
+              marginBottom: "15px",
+              fontWeight: "500",
             }}
           >
             {isOccupied ? "Occupied" : "Vacant"}
           </span>
-          {isOccupied && i < roomTenants.length && (
+
+          {/* Show tenant name if occupied */}
+          {isOccupied && tenant && (
             <div
               style={{
                 position: "absolute",
-                bottom: "-8px",
-                left: "50%",
-                transform: "translateX(-50%)",
-                backgroundColor: "#4f46e5",
+                top: "12px",
+                right: "12px",
+                backgroundColor: "#ef4444",
                 color: "white",
-                padding: "2px 8px",
-                borderRadius: "10px",
-                fontSize: "10px",
-                whiteSpace: "nowrap",
-                maxWidth: "100px",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
+                padding: "3px 8px",
+                borderRadius: "6px",
+                fontSize: "12px",
+                fontWeight: "600",
+                boxShadow: "0 2px 4px rgba(239, 68, 68, 0.2)",
               }}
             >
-              {roomTenants[i]?.name || "Tenant"}
+              {tenant?.name || "Tenant"}
             </div>
           )}
+
+          {/* Action buttons - always visible */}
+          <div
+            style={{
+              display: "flex",
+              gap: "5px",
+              marginTop: "auto",
+              width: "100%",
+            }}
+          >
+            {isOccupied && tenant ? (
+              <div style={{
+                display: "flex",
+                width: "90%",
+                gap: "6px",
+                justifyContent: "space-between"
+              }}>
+                <button
+                  onClick={() => navigate(`/tenants/edit/${tenant._id}`)}
+                  style={{
+                    flex: 1,
+                    padding: "6px 0",
+                    fontSize: "12px",
+                    backgroundColor: "#3b82f6",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                    transition: "all 0.2s ease",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    letterSpacing: "0.3px",
+                  }}
+                  title="Edit Tenant"
+                >
+                  <FaEdit style={{ marginRight: "8px", fontSize: "14px" }} /> Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteTenant(tenant._id)}
+                  style={{
+                    flex: 1,
+                    padding: "6px 0",
+                    fontSize: "12px",
+                    backgroundColor: "#ef4444",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                    transition: "all 0.2s ease",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    letterSpacing: "0.3px",
+                  }}
+                  title="Remove Tenant"
+                >
+                  <FaTrash style={{ marginRight: "8px", fontSize: "14px" }} /> Remove
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => handleAddTenant(i+1)}
+                style={{
+                  width: "100%",
+                  padding: "6px 0",
+                  fontSize: "12px",
+                  backgroundColor: "#10b981",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: "600",
+                  transition: "all 0.2s ease",
+                  letterSpacing: "0.3px",
+                }}
+                title="Add Tenant to Bed"
+              >
+                <FaUserPlus style={{ marginRight: "8px", fontSize: "14px" }} /> Add
+              </button>
+            )}
+          </div>
         </div>
       );
     }
@@ -223,9 +346,104 @@ const RoomDetails = ({ roomProp, isModal }) => {
           flexWrap: "wrap",
           justifyContent: "center",
           margin: "20px 0",
+          gap: "15px",
         }}
       >
         {beds}
+
+        {/* Room action buttons - always visible */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-around",
+            width: "100%",
+            marginTop: "25px",
+            padding: "15px 0",
+            borderTop: "1px solid #e5e7eb",
+          }}
+        >
+          <button
+            onClick={() => navigate(`/rooms/edit/${room._id}`)}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "#3b82f6",
+              fontSize: "14px",
+              fontWeight: "600",
+              padding: "10px",
+              borderRadius: "8px",
+              transition: "all 0.2s ease",
+              width: "80px",
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = "rgba(59, 130, 246, 0.1)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
+          >
+            <FaEdit style={{ fontSize: "22px", marginBottom: "8px" }} />
+            Edit
+          </button>
+          <button
+            onClick={handleDeleteRoom}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "#ef4444",
+              fontSize: "14px",
+              fontWeight: "600",
+              padding: "10px",
+              borderRadius: "8px",
+              transition: "all 0.2s ease",
+              width: "80px",
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
+          >
+            <FaTrash style={{ fontSize: "22px", marginBottom: "8px" }} />
+            Delete
+          </button>
+          <button
+            onClick={handleAddTenant}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "#10b981",
+              fontSize: "14px",
+              fontWeight: "600",
+              padding: "10px",
+              borderRadius: "8px",
+              transition: "all 0.2s ease",
+              width: "80px",
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = "rgba(16, 185, 129, 0.1)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
+          >
+            <FaUserPlus style={{ fontSize: "22px", marginBottom: "8px" }} />
+            Add
+          </button>
+        </div>
       </div>
     );
   };
@@ -358,7 +576,6 @@ const RoomDetails = ({ roomProp, isModal }) => {
             style={{
               display: "flex",
               alignItems: "center",
-              justifyContent: "space-between",
               marginBottom: 8,
             }}
           >
@@ -372,61 +589,20 @@ const RoomDetails = ({ roomProp, isModal }) => {
             >
               Bed Layout
             </span>
-            <button
-              className="modern-btn modern-btn-edit"
-              style={{ minWidth: 90, fontSize: 13, padding: "0.4rem 1rem" }}
-              onClick={() => setEditBeds((v) => !v)}
-            >
-              {editBeds ? "Done" : "Edit"}
-            </button>
           </div>
           <div
             style={{
-              background: "rgba(255,255,255,0.5)",
+              background: "white",
               borderRadius: "12px",
-              padding: "15px",
-              border: "1px dashed #d1d5db",
+              padding: "20px 15px",
+              border: "1px solid #e5e7eb",
+              boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+              transition: "all 0.3s ease",
             }}
           >
             {renderBedLayout()}
           </div>
         </div>
-      </div>
-      {/* Sticky/Floating Action Bar */}
-      <div
-        style={{
-          position: "sticky",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          background: "rgba(255,255,255,0.95)",
-          borderTop: "1px solid #e5e7eb",
-          display: "flex",
-          gap: 10,
-          justifyContent: "flex-end",
-          padding: "0.7rem 2rem",
-          zIndex: 10,
-        }}
-      >
-        <button
-          className="modern-btn modern-btn-edit"
-          onClick={() => navigate(`/rooms/edit/${room._id}`)}
-        >
-          <FaEdit /> Edit Room
-        </button>
-        <button
-          className="modern-btn modern-btn-delete"
-          onClick={() => {
-            if (window.confirm("Are you sure you want to delete this room?")) {
-              /* delete logic here */
-            }
-          }}
-        >
-          <FaTrash /> Delete Room
-        </button>
-        <button className="modern-btn modern-btn-add" onClick={handleAddTenant}>
-          <FaUserPlus /> Add Tenant
-        </button>
       </div>
     </div>
   );
