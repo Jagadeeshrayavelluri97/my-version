@@ -1,0 +1,50 @@
+/* Logo styles for cross-browser compatibility and responsiveness */
+
+.logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logo-image {
+  height: auto;
+  width: auto;
+  max-height: 80px;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: center;
+  /* Fix for Safari */
+  -webkit-transform: translateZ(0);
+  /* Fix for Firefox */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .logo-image {
+    max-height: 60px;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-image {
+    max-height: 50px;
+  }
+}
+
+/* Fix for IE11 */
+@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+  .logo-image {
+    width: auto;
+    height: 80px;
+  }
+}
+
+/* Fix for Edge */
+@supports (-ms-ime-align: auto) {
+  .logo-image {
+    width: auto;
+    height: 80px;
+  }
+}
