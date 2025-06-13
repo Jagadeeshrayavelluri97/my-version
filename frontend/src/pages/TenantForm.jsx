@@ -362,7 +362,7 @@ const TenantForm = ({
   const startCamera = async () => {
     setCapturedImage(null);
     try {
-      const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } });
       if (videoRef.current) {
         videoRef.current.srcObject = cameraStream;
       }
