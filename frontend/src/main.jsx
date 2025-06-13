@@ -15,6 +15,7 @@ import "./styles/premiumRoomCard.css";
 import "./styles/premiumRoomDetails.css";
 import "./styles/premiumRoomDetailsExtra.css";
 import "./styles/premiumTenantForm.css";
+import "./styles/premiumTenantOnboarding.css";
 import "./styles/responsive.css";
 import "./styles/premiumSidebar.css";
 import "./styles/premiumTenantCards.css";
