@@ -65,6 +65,7 @@ const TenantForm = ({
   const [tenantPhoto, setTenantPhoto] = useState(null);
   const [showTenantPhotoCapture, setShowTenantPhotoCapture] = useState(false);
   const [tenantPhotoStream, setTenantPhotoStream] = useState(null);
+  const [useFrontCamera, setUseFrontCamera] = useState(false);
   const tenantVideoRef = useRef(null);
 
   // Initialize form data with initialData if provided
@@ -407,7 +408,11 @@ const TenantForm = ({
   const startTenantPhotoCapture = async () => {
     setTenantPhoto(null);
     try {
-      const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const cameraStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: useFrontCamera ? "user" : { ideal: "environment" }
+        } 
+      });
       if (tenantVideoRef.current) {
         tenantVideoRef.current.srcObject = cameraStream;
       }
@@ -417,6 +422,14 @@ const TenantForm = ({
       showToast("Failed to access camera. Please ensure camera permissions are granted.", { type: "error" });
       setTenantPhotoStream(null);
     }
+  };
+
+  const toggleCamera = async () => {
+    setUseFrontCamera(!useFrontCamera);
+    if (tenantPhotoStream) {
+      tenantPhotoStream.getTracks().forEach(track => track.stop());
+    }
+    await startTenantPhotoCapture();
   };
 
   const stopTenantPhotoCapture = () => {
@@ -637,6 +650,13 @@ const TenantForm = ({
                   className="premium-tenant-btn premium-tenant-capture-btn"
                 >
                   <FaCamera className="mr-2" /> Capture
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleCamera}
+                  className="premium-tenant-btn premium-tenant-toggle-camera-btn"
+                >
+                  <FaRedo className="mr-2" /> Switch Camera
                 </button>
                 <button
                   type="button"
