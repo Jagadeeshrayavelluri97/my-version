@@ -10,6 +10,11 @@ const RoomSchema = new mongoose.Schema({
     required: [true, "Please add a room number"],
     trim: true,
   },
+  type: {
+    type: String,
+    enum: ['PG', 'Dormitory'],
+    required: [true, "Please select accommodation type"],
+  },
   capacity: {
     type: Number,
     required: [true, "Please add room capacity"],
@@ -18,6 +23,12 @@ const RoomSchema = new mongoose.Schema({
   rentAmount: {
     type: Number,
     required: [true, "Please add rent amount"],
+  },
+  // For Dormitory: rent per day, for PG: rent per month
+  rentType: {
+    type: String,
+    enum: ['per_day', 'per_month'],
+    required: [true, "Please specify rent type"],
   },
   occupiedBeds: {
     type: Number,

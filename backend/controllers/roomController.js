@@ -199,39 +199,84 @@ exports.fixRoomOccupancy = asyncHandler(async (req, res, next) => {
   // Get admin ID from authenticated user
   const adminId = req.admin.id;
 
-  // Get all rooms for this admin
-  const rooms = await Room.find({ adminId });
+  try {
+    // Get all rooms for this admin
+    const rooms = await Room.find({ adminId });
 
-  let fixedCount = 0;
-
-  // Process each room
-  for (const room of rooms) {
-    // Count actual tenants in this room
-    const tenantCount = await Tenant.countDocuments({
-      adminId,
-      roomId: room._id,
-      active: true,
-    });
-
-    // If the counts don't match or isOccupied flag is incorrect, update the room
-    if (
-      room.occupiedBeds !== tenantCount ||
-      room.isOccupied !== (tenantCount === room.capacity)
-    ) {
-      await Room.findByIdAndUpdate(room._id, {
-        occupiedBeds: tenantCount,
-        isOccupied: tenantCount === room.capacity,
+    for (const room of rooms) {
+      // Count tenants for this room
+      const tenantCount = await Tenant.countDocuments({
+        roomId: room._id,
+        adminId: adminId,
       });
 
-      fixedCount++;
+      // Update room occupancy
+      await Room.findByIdAndUpdate(room._id, {
+        occupiedBeds: tenantCount,
+        isOccupied: tenantCount > 0,
+      });
     }
-  }
 
-  res.status(200).json({
-    success: true,
-    message: `Fixed occupancy counts for ${fixedCount} rooms`,
-    data: {},
-  });
+    res.status(200).json({
+      success: true,
+      message: "Room occupancy counts updated successfully",
+    });
+  } catch (error) {
+    console.error("Error fixing room occupancy:", error);
+    return next(
+      new ErrorResponse("Failed to fix room occupancy counts", 500)
+    );
+  }
+});
+
+// @desc    Migrate existing rooms to include type and rentType fields
+// @route   GET /api/v1/rooms/migrate
+// @access  Private
+exports.migrateRooms = asyncHandler(async (req, res, next) => {
+  // Get admin ID from authenticated user
+  const adminId = req.admin.id;
+
+  try {
+    // Get all rooms for this admin that don't have type field
+    const roomsToMigrate = await Room.find({
+      adminId,
+      $or: [
+        { type: { $exists: false } },
+        { rentType: { $exists: false } }
+      ]
+    });
+
+    let migratedCount = 0;
+
+    for (const room of roomsToMigrate) {
+      // Set default values for existing rooms
+      const updateData = {};
+      
+      if (!room.type) {
+        updateData.type = 'PG'; // Default existing rooms to PG
+      }
+      
+      if (!room.rentType) {
+        updateData.rentType = 'per_month'; // Default existing rooms to per month
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        await Room.findByIdAndUpdate(room._id, updateData);
+        migratedCount++;
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully migrated ${migratedCount} rooms`,
+      migratedCount,
+    });
+  } catch (error) {
+    console.error("Error migrating rooms:", error);
+    return next(
+      new ErrorResponse("Failed to migrate rooms", 500)
+    );
+  }
 });
 
 // @desc    Get last updated time for rooms

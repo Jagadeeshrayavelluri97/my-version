@@ -53,6 +53,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Serve static files for images
+app.use('/uploads', express.static('uploads'));
+
 // Mount routers
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/rooms", roomRoutes);

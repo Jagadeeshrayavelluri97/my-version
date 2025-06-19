@@ -1,16 +1,26 @@
 import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FaCamera, FaArrowRight, FaArrowLeft, FaCheckCircle } from 'react-icons/fa';
 import { showToast } from '../utils/toast';
 import TenantForm from './TenantForm';
+import { useRooms } from '../context/RoomContext';
 
 const TenantOnboarding = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [currentStep, setCurrentStep] = useState(1);
   const [mobileNumber, setMobileNumber] = useState('');
   const [tenantPhoto, setTenantPhoto] = useState(null);
   const [aadhaarData, setAadhaarData] = useState(null);
   const [fullFormData, setFullFormData] = useState(null);
+
+  // Get roomId and bedNumber from navigation state if available
+  const roomId = location.state?.roomId;
+  const bedNumber = location.state?.bedNumber;
+
+  const { getRoom } = useRooms();
+
+  const roomObj = roomId ? getRoom(roomId) : null;
 
   const steps = [
     { id: 1, title: 'Mobile Number Verification' },
@@ -46,6 +56,8 @@ const TenantOnboarding = () => {
       ...data,
       mobileNumber: mobileNumber,
       tenantPhoto: tenantPhoto,
+      roomId: roomId || data.roomId,
+      bedNumber: bedNumber || data.bedNumber,
     }));
     setCurrentStep(5);
   };
@@ -178,6 +190,18 @@ const TenantOnboarding = () => {
 
   return (
     <div className="premium-tenant-onboarding">
+      {/* Show selected room and bed if available */}
+      {(roomId || bedNumber) && (
+        <div style={{ marginBottom: 16, padding: 12, background: '#f0f6ff', borderRadius: 8, fontWeight: 500 }}>
+          {roomId && (
+            <span>
+              Room: <span style={{ color: '#2563eb' }}>{roomObj ? roomObj.roomNumber : roomId}</span>
+            </span>
+          )}
+          {roomId && bedNumber && <span style={{ margin: '0 8px' }}>|</span>}
+          {bedNumber && <span>Bed: <span style={{ color: '#ef4444' }}>{bedNumber}</span></span>}
+        </div>
+      )}
       <div className="premium-tenant-steps">
         {steps.map((step) => (
           <div

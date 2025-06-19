@@ -800,9 +800,7 @@ const TenantForm = ({
         <div className="premium-tenant-form-body">
           <form onSubmit={onSubmit} ref={formRef}>
             <div className="premium-tenant-form-grid">
-              {/* Only show these fields if not in Aadhaar-only mode */}
-              {!showOnlyAadhaar && (
-                <>
+              {/* Always show these fields, even in edit mode */}
               <div className="premium-tenant-form-group">
                 <label htmlFor="name" className="premium-tenant-form-label">
                   <FaUser className="inline-block mr-2" /> Full Name
@@ -851,10 +849,7 @@ const TenantForm = ({
               </div>
 
               <div className="premium-tenant-form-group">
-                <label
-                  htmlFor="occupation"
-                  className="premium-tenant-form-label"
-                >
+                <label htmlFor="occupation" className="premium-tenant-form-label">
                   <FaBriefcase className="inline-block mr-2" /> Occupation
                 </label>
                 <input
@@ -867,15 +862,9 @@ const TenantForm = ({
                   placeholder="Enter occupation (optional)"
                 />
               </div>
-                </>
-              )}
 
-              {/* Always show these fields, but populate from OCR if available */}
               <div className="premium-tenant-form-group">
-                <label
-                  htmlFor="idProofType"
-                  className="premium-tenant-form-label"
-                >
+                <label htmlFor="idProofType" className="premium-tenant-form-label">
                   <FaIdCard className="inline-block mr-2" /> ID Proof Type
                 </label>
                 <select
@@ -895,10 +884,7 @@ const TenantForm = ({
               </div>
 
               <div className="premium-tenant-form-group">
-                <label
-                  htmlFor="idProofNumber"
-                  className="premium-tenant-form-label"
-                >
+                <label htmlFor="idProofNumber" className="premium-tenant-form-label">
                   <FaIdCard className="inline-block mr-2" /> ID Proof Number
                 </label>
                 <input
@@ -962,21 +948,6 @@ const TenantForm = ({
                 ></textarea>
               </div>
 
-              {/* Display OCR image within the form if available */}
-              {ocrImage && (
-                <div className="premium-tenant-form-group col-span-2">
-                  <label className="premium-tenant-form-label">
-                    <FaIdCard className="inline-block mr-2" /> Scanned Aadhaar Preview
-                  </label>
-                  <div className="premium-tenant-aadhaar-in-form-preview">
-                    <img src={ocrImage} alt="Aadhaar in form" />
-                  </div>
-                </div>
-              )}
-
-              {/* Only show room and bed selection if not in Aadhaar-only mode */}
-              {!showOnlyAadhaar && (
-                <>
               <div className="premium-tenant-form-group">
                 <label htmlFor="roomId" className="premium-tenant-form-label">
                   <FaBuilding className="inline-block mr-2" /> Room
@@ -986,35 +957,13 @@ const TenantForm = ({
                   name="roomId"
                   value={roomId}
                   onChange={onChange}
-                  className={`premium-tenant-form-select ${
-                    preselectedRoomId ? "border-green-500 bg-green-50" : ""
-                  }`}
+                  className="premium-tenant-form-select"
                   required
-                  style={{
-                    transition: "all 0.3s ease",
-                    borderColor: preselectedRoomId ? "#10b981" : "",
-                    boxShadow: preselectedRoomId
-                      ? "0 0 0 3px rgba(16, 185, 129, 0.1)"
-                      : "",
-                  }}
                 >
                   <option value="">Select a room</option>
                   {rooms.map((room) => (
-                    <option
-                      key={room._id}
-                      value={room._id}
-                      disabled={
-                        room.occupiedBeds >= room.capacity &&
-                        room._id !== roomId
-                      }
-                    >
+                    <option key={room._id} value={room._id}>
                       Floor {room.floorNumber}, Room {room.roomNumber}
-                      {room.occupiedBeds > 0
-                        ? ` (${room.occupiedBeds}/${room.capacity} occupied)`
-                        : " (Vacant)"}
-                      {room._id === preselectedRoomId
-                        ? " ← Selected from Rooms page"
-                        : ""}
                     </option>
                   ))}
                 </select>
@@ -1030,9 +979,7 @@ const TenantForm = ({
                     name="bedNumber"
                     value={bedNumber.toString()}
                     onChange={onChange}
-                    className={`premium-tenant-form-select ${
-                      preselectedBedNumber ? "border-green-500 bg-green-50" : ""
-                    }`}
+                    className="premium-tenant-form-select"
                     required
                   >
                     <option value="">Select a bed</option>
@@ -1044,7 +991,6 @@ const TenantForm = ({
                           tenant => tenant.bedNumber === (i+1) && 
                             (!isEditMode || (isEditMode && tenant._id !== id))
                         );
-
                         return (
                           <option
                             key={i+1}
@@ -1058,19 +1004,11 @@ const TenantForm = ({
                       })
                     }
                   </select>
-                  {isEditMode && (
-                    <p className="text-sm text-gray-500 mt-1">
-                      You can change the bed number. Other occupied beds are disabled.
-                    </p>
-                  )}
                 </div>
               )}
 
               <div className="premium-tenant-form-group">
-                <label
-                  htmlFor="joiningDate"
-                  className="premium-tenant-form-label"
-                >
+                <label htmlFor="joiningDate" className="premium-tenant-form-label">
                   <FaCalendarAlt className="inline-block mr-2" /> Joining Date
                 </label>
                 <input
@@ -1084,36 +1022,26 @@ const TenantForm = ({
                 />
               </div>
 
-              {isEditMode && (
-                <div className="premium-tenant-form-group">
-                  <label htmlFor="active" className="premium-tenant-form-label">
-                    <FaToggleOn className="inline-block mr-2" /> Status
-                  </label>
-                  <select
-                    id="active"
-                    name="active"
-                    value={active.toString()}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        active: e.target.value === "true",
-                      })
-                    }
-                    className="premium-tenant-form-select"
-                    style={{
-                      borderColor: active ? "#10b981" : "#ef4444",
-                      backgroundColor: active
-                        ? "rgba(16, 185, 129, 0.05)"
-                        : "rgba(239, 68, 68, 0.05)",
-                    }}
-                  >
-                    <option value="true">Active</option>
-                    <option value="false">Inactive</option>
-                  </select>
-                </div>
-                  )}
-                </>
-              )}
+              <div className="premium-tenant-form-group">
+                <label htmlFor="active" className="premium-tenant-form-label">
+                  <FaToggleOn className="inline-block mr-2" /> Status
+                </label>
+                <select
+                  id="active"
+                  name="active"
+                  value={active.toString()}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      active: e.target.value === "true",
+                    })
+                  }
+                  className="premium-tenant-form-select"
+                >
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
+                </select>
+              </div>
             </div>
 
             <div className="premium-tenant-form-footer">

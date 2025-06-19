@@ -7,15 +7,19 @@ import {
   FaBuilding,
   FaSync,
   FaExclamationTriangle,
+  FaDatabase,
 } from "react-icons/fa";
 import { useRooms } from "../context/RoomContext";
 import RoomCard from "../components/RoomCard";
+import api from "../utils/api";
+import { showToast } from "../utils/toast";
 
 const Rooms = () => {
-  const { rooms, loading, deleteRoom } = useRooms();
+  const { rooms, loading, deleteRoom, fetchRooms } = useRooms();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [migrating, setMigrating] = useState(false);
 
   const handleViewRoom = (roomId) => {
     navigate(`/rooms/details/${roomId}`);
@@ -28,6 +32,28 @@ const Rooms = () => {
 
   const handleDelete = async (id) => {
     await deleteRoom(id);
+  };
+
+  // Function to migrate existing rooms
+  const handleMigrateRooms = async () => {
+    if (window.confirm("This will update existing rooms to include accommodation type information. Continue?")) {
+      setMigrating(true);
+      try {
+        const response = await api.get("/api/v1/rooms/migrate");
+        if (response.data.success) {
+          showToast(`Successfully migrated ${response.data.migratedCount} rooms`, { type: "success" });
+          // Refresh rooms data
+          await fetchRooms();
+        } else {
+          showToast("Migration failed", { type: "error" });
+        }
+      } catch (error) {
+        console.error("Migration error:", error);
+        showToast("Migration failed: " + (error.response?.data?.error || error.message), { type: "error" });
+      } finally {
+        setMigrating(false);
+      }
+    }
   };
 
   // Filter and search rooms
@@ -88,9 +114,11 @@ const Rooms = () => {
     <div className="premium-room-container responsive-container">
       <div className="premium-room-header responsive-flex-between">
         <h1 className="premium-room-title responsive-title">Rooms</h1>
-        <Link to="/rooms/add" className="premium-room-add-btn">
-          <FaPlus className="premium-room-add-icon" /> Add Room
-        </Link>
+        <div className="flex gap-3">
+          <Link to="/rooms/add" className="premium-room-add-btn">
+            <FaPlus className="premium-room-add-icon" /> Add Room
+          </Link>
+        </div>
       </div>
 
       {/* Search and Filter Controls */}
@@ -126,7 +154,7 @@ const Rooms = () => {
       </div>
 
       {/* Room Cards Grid */}
-      <div className="room-cards-container">
+      <div className="premium-room-cards">
         {filteredRooms.map((room) => (
           <RoomCard
             key={room._id}

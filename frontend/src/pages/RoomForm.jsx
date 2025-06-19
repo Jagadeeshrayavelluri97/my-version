@@ -24,11 +24,20 @@ const RoomForm = () => {
   const [formData, setFormData] = useState({
     floorNumber: "",
     roomNumber: "",
+    type: "PG", // Default to PG
     capacity: 1,
     rentAmount: "",
+    rentType: "per_month", // Default to per month for PG
     amenities: [],
     description: "",
   });
+
+  // For dormitory booking dates
+  const [bookingDates, setBookingDates] = useState({
+    checkInDate: "",
+    checkOutDate: "",
+  });
+
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(isEditMode);
   const [triedFetch, setTriedFetch] = useState(false);
@@ -36,8 +45,10 @@ const RoomForm = () => {
   const {
     floorNumber,
     roomNumber,
+    type,
     capacity,
     rentAmount,
+    rentType,
     amenities,
     description,
   } = formData;
@@ -64,8 +75,10 @@ const RoomForm = () => {
       setFormData({
         floorNumber: room.floorNumber,
         roomNumber: room.roomNumber,
+        type: room.type || "PG",
         capacity: room.capacity,
         rentAmount: room.rentAmount,
+        rentType: room.rentType || "per_month",
         amenities: room.amenities || [],
         description: room.description || "",
       });
@@ -84,8 +97,10 @@ const RoomForm = () => {
             setFormData({
               floorNumber: room.floorNumber,
               roomNumber: room.roomNumber,
+              type: room.type || "PG",
               capacity: room.capacity,
               rentAmount: room.rentAmount,
+              rentType: room.rentType || "per_month",
               amenities: room.amenities || [],
               description: room.description || "",
             });
@@ -127,12 +142,41 @@ const RoomForm = () => {
   }, [id, isEditMode]);
 
   const onChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    
+    // If type is changing, automatically set the appropriate rentType
+    if (name === 'type') {
+      const newRentType = value === 'PG' ? 'per_month' : 'per_day';
+      setFormData({ 
+        ...formData, 
+        [name]: value,
+        rentType: newRentType
+      });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   // Handle amenities changes from the AmenitiesSelector component
   const handleAmenitiesChange = (selectedAmenities) => {
     setFormData({ ...formData, amenities: selectedAmenities });
+  };
+
+  // Handle booking date changes for dormitory
+  const handleBookingDateChange = (e) => {
+    const { name, value } = e.target;
+    setBookingDates({ ...bookingDates, [name]: value });
+  };
+
+  // Calculate total rent for dormitory based on dates
+  const calculateTotalRent = () => {
+    if (type === 'Dormitory' && bookingDates.checkInDate && bookingDates.checkOutDate && rentAmount) {
+      const checkIn = new Date(bookingDates.checkInDate);
+      const checkOut = new Date(bookingDates.checkOutDate);
+      const days = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+      return days * parseFloat(rentAmount);
+    }
+    return null;
   };
 
   const onSubmit = async (e) => {
@@ -280,6 +324,26 @@ const RoomForm = () => {
 
             <div>
               <label
+                htmlFor="type"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Type
+              </label>
+              <select
+                id="type"
+                name="type"
+                value={type}
+                onChange={onChange}
+                className="form-input"
+                required
+              >
+                <option value="PG">PG</option>
+                <option value="Dormitory">Dormitory</option>
+              </select>
+            </div>
+
+            <div>
+              <label
                 htmlFor="capacity"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
@@ -302,7 +366,7 @@ const RoomForm = () => {
                 htmlFor="rentAmount"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Rent Amount (₹/month)
+                Rent Amount ({type === 'PG' ? '₹/month' : '₹/day'})
               </label>
               <input
                 type="number"
@@ -315,6 +379,75 @@ const RoomForm = () => {
                 min="0"
               />
             </div>
+
+            {/* Date pickers for Dormitory */}
+            {type === 'Dormitory' && (
+              <>
+                <div>
+                  <label
+                    htmlFor="checkInDate"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Check-in Date
+                  </label>
+                  <input
+                    type="date"
+                    id="checkInDate"
+                    name="checkInDate"
+                    value={bookingDates.checkInDate}
+                    onChange={handleBookingDateChange}
+                    className="form-input"
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="checkOutDate"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Check-out Date
+                  </label>
+                  <input
+                    type="date"
+                    id="checkOutDate"
+                    name="checkOutDate"
+                    value={bookingDates.checkOutDate}
+                    onChange={handleBookingDateChange}
+                    className="form-input"
+                    min={bookingDates.checkInDate || new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+
+                {/* Total rent calculation display */}
+                {calculateTotalRent() && (
+                  <div className="md:col-span-2">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-blue-800 mb-2">
+                        Total Rent Calculation
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium">Rent per day:</span> ₹{rentAmount}
+                        </div>
+                        <div>
+                          <span className="font-medium">Number of days:</span> {
+                            Math.ceil(
+                              (new Date(bookingDates.checkOutDate) - new Date(bookingDates.checkInDate)) / 
+                              (1000 * 60 * 60 * 24)
+                            )
+                          }
+                        </div>
+                        <div className="col-span-2">
+                          <span className="font-medium text-lg">Total rent:</span> 
+                          <span className="text-lg font-bold text-blue-600 ml-2">₹{calculateTotalRent()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           <div className="mt-6">
