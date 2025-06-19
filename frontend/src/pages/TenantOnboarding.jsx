@@ -1,23 +1,30 @@
-import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FaCamera, FaArrowRight, FaArrowLeft, FaCheckCircle } from 'react-icons/fa';
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { FaCamera, FaArrowRight, FaArrowLeft, FaCheckCircle, FaMobile, FaIdCard, FaUser } from 'react-icons/fa';
 import { showToast } from '../utils/toast';
 import TenantForm from './TenantForm';
 
 const TenantOnboarding = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [currentStep, setCurrentStep] = useState(1);
   const [mobileNumber, setMobileNumber] = useState('');
   const [tenantPhoto, setTenantPhoto] = useState(null);
   const [aadhaarData, setAadhaarData] = useState(null);
   const [fullFormData, setFullFormData] = useState(null);
 
+  // Get parameters from URL query parameters if available
+  const queryParams = new URLSearchParams(location.search);
+  const preselectedRoomId = queryParams.get("roomId");
+  const preselectedBedNumber = queryParams.get("bedNumber");
+  const returnToRoom = queryParams.get("returnToRoom") === "true";
+
   const steps = [
-    { id: 1, title: 'Mobile Number Verification' },
-    { id: 2, title: 'Live Photo Capture' },
-    { id: 3, title: 'Aadhaar Card Upload' },
-    { id: 4, title: 'Additional Details' },
-    { id: 5, title: 'Review & Submit' }
+    { id: 1, title: 'Mobile Number Verification', icon: FaMobile },
+    { id: 2, title: 'Live Photo Capture', icon: FaCamera },
+    { id: 3, title: 'Aadhaar Card Upload', icon: FaIdCard },
+    { id: 4, title: 'Additional Details', icon: FaUser },
+    { id: 5, title: 'Review & Submit', icon: FaCheckCircle }
   ];
 
   const handleMobileSubmit = (e) => {
@@ -37,6 +44,11 @@ const TenantOnboarding = () => {
   const handleAadhaarData = (data) => {
     setAadhaarData(data);
     setFullFormData(prev => ({ ...prev, ...data }));
+  };
+
+  const handleAadhaarReviewComplete = (aadhaarFormData) => {
+    setAadhaarData(aadhaarFormData);
+    setFullFormData(prev => ({ ...prev, ...aadhaarFormData }));
     setCurrentStep(4);
   };
 
@@ -53,7 +65,11 @@ const TenantOnboarding = () => {
   const handleSubmitFinal = () => {
     console.log("Final Tenant Data:", fullFormData);
     showToast("Tenant onboarding complete!", { type: "success" });
-    navigate('/rooms');
+    if (returnToRoom && preselectedRoomId) {
+      navigate(`/rooms/details/${preselectedRoomId}`);
+    } else {
+      navigate('/tenants');
+    }
   };
 
   const renderStep = () => {
@@ -87,7 +103,7 @@ const TenantOnboarding = () => {
             <h2 className="text-2xl font-bold mb-6">Capture Live Photo</h2>
             <TenantForm 
               formMode="tenantPhotoCapture" 
-              onTenantPhotoCaptured={handleTenantPhotoCaptured} 
+              onComplete={handleTenantPhotoCaptured} 
             />
           </div>
         );
@@ -99,6 +115,7 @@ const TenantOnboarding = () => {
             <TenantForm
               formMode="aadhaarUpload"
               onAadhaarData={handleAadhaarData}
+              onComplete={handleAadhaarReviewComplete}
             />
           </div>
         );
@@ -109,7 +126,7 @@ const TenantOnboarding = () => {
             <h2 className="text-2xl font-bold mb-6">Additional Details</h2>
             <TenantForm
               formMode="additionalDetails"
-              initialData={aadhaarData}
+              initialData={fullFormData}
               onComplete={handleAdditionalDetailsComplete}
             />
           </div>
@@ -136,15 +153,17 @@ const TenantOnboarding = () => {
                 </div>
               )}
               {aadhaarData && (
-                <div className="premium-tenant-review-item">
-                  <FaCheckCircle className="text-green-500 mr-2" />
-                  <span>Aadhaar Details Verified</span>
-                  <div className="mt-2 text-sm text-gray-600">
-                    <p><strong>Name:</strong> {aadhaarData.name}</p>
-                    <p><strong>Aadhaar No:</strong> {aadhaarData.idProofNumber}</p>
-                    <p><strong>DOB:</strong> {aadhaarData.dob}</p>
-                    <p><strong>Gender:</strong> {aadhaarData.gender}</p>
-                    <p><strong>Address:</strong> {aadhaarData.address}</p>
+                <div className="premium-tenant-review-item flex items-start">
+                  <FaCheckCircle className="text-green-500 mr-2 flex-shrink-0 mt-1" />
+                  <div className="flex flex-col">
+                    <span>Aadhaar Details Verified</span>
+                    <div className="mt-2 text-sm text-gray-600 grid grid-cols-2 gap-x-4 gap-y-1">
+                      <p className="font-bold text-right">Name:</p><p>{aadhaarData.name || 'N/A'}</p>
+                      <p className="font-bold text-right">Aadhaar No:</p><p>{aadhaarData.idProofNumber || 'N/A'}</p>
+                      <p className="font-bold text-right">DOB:</p><p>{aadhaarData.dob || 'N/A'}</p>
+                      <p className="font-bold text-right">Gender:</p><p>{aadhaarData.gender || 'N/A'}</p>
+                      <p className="font-bold text-right">Address:</p><p>{aadhaarData.address || 'N/A'}</p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -152,12 +171,12 @@ const TenantOnboarding = () => {
                 <div className="premium-tenant-review-item">
                   <FaCheckCircle className="text-green-500 mr-2" />
                   <span>Additional Details</span>
-                  <div className="mt-2 text-sm text-gray-600">
-                    <p><strong>Email:</strong> {fullFormData.email}</p>
-                    <p><strong>Occupation:</strong> {fullFormData.occupation}</p>
-                    <p><strong>Room:</strong> {fullFormData.roomId}</p>
-                    <p><strong>Bed:</strong> {fullFormData.bedNumber}</p>
-                    <p><strong>Joining Date:</strong> {fullFormData.joiningDate}</p>
+                  <div className="mt-2 text-sm text-gray-600 grid grid-cols-2 gap-x-4 gap-y-1">
+                    <p className="font-bold text-right">Email:</p><p>{fullFormData.email || 'N/A'}</p>
+                    <p className="font-bold text-right">Occupation:</p><p>{fullFormData.occupation || 'N/A'}</p>
+                    <p className="font-bold text-right">Room:</p><p>{fullFormData.roomId || 'N/A'}</p>
+                    <p className="font-bold text-right">Bed:</p><p>{fullFormData.bedNumber || 'N/A'}</p>
+                    <p className="font-bold text-right">Joining Date:</p><p>{fullFormData.joiningDate || 'N/A'}</p>
                   </div>
                 </div>
               )}
@@ -186,7 +205,9 @@ const TenantOnboarding = () => {
               currentStep >= step.id ? 'active' : ''
             }`}
           >
-            <div className="premium-tenant-step-number">{step.id}</div>
+            <div className="premium-tenant-step-number">
+              <step.icon className="text-xl" />
+            </div>
             <div className="premium-tenant-step-title">{step.title}</div>
           </div>
         ))}

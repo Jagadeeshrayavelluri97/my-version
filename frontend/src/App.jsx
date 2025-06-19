@@ -62,7 +62,7 @@ function App() {
               <Route path="rooms/edit/:id" element={<RoomForm />} />
               <Route path="rooms/details/:id" element={<RoomDetails />} />
               <Route path="tenants" element={<Tenants />} />
-              <Route path="tenants/add" element={<TenantForm />} />
+              <Route path="tenants/add" element={<TenantOnboarding />} />
               <Route path="tenants/edit/:id" element={<TenantForm />} />
               <Route path="rents" element={<Rents />} />
               <Route path="rents/add" element={<RentForm />} />

@@ -32,7 +32,8 @@ const TenantForm = ({
   onAadhaarData, 
   showOnlyAadhaar = false, 
   initialData = null,
-  onComplete 
+  onComplete,
+  formMode = "full" // New prop: "full", "tenantPhotoCapture", "aadhaarUpload", "additionalDetails"
 }) => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -52,7 +53,7 @@ const TenantForm = ({
   // OCR State
   const [ocrImage, setOcrImage] = useState(null);
   const [ocrLoading, setOcrLoading] = useState(false);
-  const [showOcrSection, setShowOcrSection] = useState(showOnlyAadhaar);
+  const [showOcrSection, setShowOcrSection] = useState(showOnlyAadhaar || formMode === "aadhaarUpload");
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(isEditMode);
   const formRef = useRef(null);
@@ -63,9 +64,8 @@ const TenantForm = ({
 
   // Add new state for tenant photo
   const [tenantPhoto, setTenantPhoto] = useState(null);
-  const [showTenantPhotoCapture, setShowTenantPhotoCapture] = useState(false);
+  const [showTenantPhotoCapture, setShowTenantPhotoCapture] = useState(formMode === "tenantPhotoCapture");
   const [tenantPhotoStream, setTenantPhotoStream] = useState(null);
-  const [useFrontCamera, setUseFrontCamera] = useState(false);
   const tenantVideoRef = useRef(null);
 
   // Initialize form data with initialData if provided
@@ -264,15 +264,43 @@ const TenantForm = ({
     setLoading(true);
 
     try {
-      if (showOnlyAadhaar) {
-        if (onAadhaarData) {
-          onAadhaarData(formData);
+      if (formMode === "aadhaarUpload") {
+        // The onAadhaarData is called by handleImageUpload when OCR completes. 
+        // So, when this onSubmit is called, it means the user clicked "Continue".
+        // We should ensure all required Aadhaar fields are filled before proceeding.
+        const requiredAadhaarFields = ['name', 'idProofNumber', 'dob', 'gender', 'address'];
+        const allAadhaarFieldsFilled = requiredAadhaarFields.every(field => formData[field] && formData[field].toString().trim() !== '');
+
+        if (ocrImage && allAadhaarFieldsFilled) {
+          if (onComplete) {
+            onComplete(formData);
+          }
+        } else if (!ocrImage) {
+          showToast("Please upload an Aadhaar image first.", { type: "error" });
+        } else {
+          showToast("Please ensure all Aadhaar details (Name, Aadhaar No., DOB, Gender, Address) are filled before continuing.", { type: "error" });
         }
         setLoading(false);
         return;
       }
 
-      // Double-check room capacity before submitting
+      if (formMode === "tenantPhotoCapture") {
+        if (tenantPhoto && onComplete) {
+          onComplete(tenantPhoto);
+        }
+        setLoading(false);
+        return;
+      }
+
+      if (formMode === "additionalDetails") {
+        if (onComplete) {
+          onComplete(formData);
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Original form submission logic for full mode or edit mode
       if (!isEditMode || (isEditMode && formData.roomId !== id)) {
         const selectedRoom = rooms.find((r) => r._id === formData.roomId);
         const currentTenants = getTenantsByRoom(formData.roomId);
@@ -287,7 +315,6 @@ const TenantForm = ({
         }
       }
 
-      // Format dates properly before sending to API
       const tenantData = {
         ...formData,
         dob: formData.dob ? new Date(formData.dob).toISOString() : null,
@@ -321,13 +348,18 @@ const TenantForm = ({
 
   const handleImageUpload = (e, capturedBlob = null, isTenantPhoto = false) => {
     let file = null;
+
     if (capturedBlob) {
       file = new File([capturedBlob], isTenantPhoto ? "tenant_photo.png" : "aadhaar_captured.png", { type: "image/png" });
-    } else {
+    } else if (e && e.target && e.target.files && e.target.files[0]) {
       file = e.target.files[0];
     }
     
-    if (!file) return;
+    if (!file) {
+        console.error("No file or captured blob provided to handleImageUpload.");
+        showToast("Failed to process image: No valid image data.", { type: "error" });
+        return;
+    }
     
     if (isTenantPhoto) {
       setTenantPhoto(URL.createObjectURL(file));
@@ -343,8 +375,9 @@ const TenantForm = ({
       { logger: m => console.log(m) }
     ).then(({ data: { text } }) => {
       const extractedData = extractAadhaarDetails(text);
+      console.log("Extracted Aadhaar Data:", extractedData);
       if (extractedData.idProofNumber) {
-      updateFormWithAadhaarData(extractedData);
+        updateFormWithAadhaarData(extractedData);
         if (onAadhaarData) {
           onAadhaarData(extractedData);
         }
@@ -408,11 +441,7 @@ const TenantForm = ({
   const startTenantPhotoCapture = async () => {
     setTenantPhoto(null);
     try {
-      const cameraStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: useFrontCamera ? "user" : { ideal: "environment" }
-        } 
-      });
+      const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
       if (tenantVideoRef.current) {
         tenantVideoRef.current.srcObject = cameraStream;
       }
@@ -422,14 +451,6 @@ const TenantForm = ({
       showToast("Failed to access camera. Please ensure camera permissions are granted.", { type: "error" });
       setTenantPhotoStream(null);
     }
-  };
-
-  const toggleCamera = async () => {
-    setUseFrontCamera(!useFrontCamera);
-    if (tenantPhotoStream) {
-      tenantPhotoStream.getTracks().forEach(track => track.stop());
-    }
-    await startTenantPhotoCapture();
   };
 
   const stopTenantPhotoCapture = () => {
@@ -478,21 +499,25 @@ const TenantForm = ({
     };
 
     const cleanText = text.replace(/[^\w\s:/-]/g, " ").replace(/\s+/g, " ").trim();
+    console.log("OCR Raw Text:", text);
+    console.log("Cleaned Text:", cleanText);
     const lines = cleanText.split("\n").map(l => l.trim()).filter(Boolean);
+    console.log("Lines:", lines);
     const joinedText = lines.join(" ");
+    console.log("Joined Text:", joinedText);
 
     // Extract Aadhaar number (more robust regex for various formats)
     const aadhaarMatch = joinedText.match(/(\d{4}\s?\d{4}\s?\d{4})|(\d{12})/);
     if (aadhaarMatch) result.idProofNumber = aadhaarMatch[0].replace(/\s/g, "");
 
     // Extract DOB (DD-MM-YYYY, DD/MM/YYYY, or just year)
-    const dobMatch = joinedText.match(/(?:DOB|Date of Birth|जन्म तिथि)[:\s]*(\d{2}[-/]\d{2}[-/]\d{4})|(\d{4})/i);
+    const dobMatch = joinedText.match(/(?:DOB|Date of Birth|जन्म तिथि)[:\s]*(\d{2}[-/.]\d{2}[-/.]\d{4})|\b(19|20)\d{2}\b/i);
     if (dobMatch) {
       result.dob = dobMatch[1] || dobMatch[2];
-      if (result.dob.length === 4) {
+      if (result.dob && result.dob.length === 4) {
         result.dob = `${result.dob}-01-01`;
-      } else {
-        const parts = result.dob.split(/[-/]/);
+      } else if (result.dob) {
+        const parts = result.dob.split(/[-/.]/);
         if (parts.length === 3) {
           result.dob = `${parts[2]}-${parts[1]}-${parts[0]}`;
         }
@@ -500,62 +525,80 @@ const TenantForm = ({
     }
 
     // Extract gender
-    if (/male/i.test(joinedText)) result.gender = "Male";
-    else if (/female/i.test(joinedText)) result.gender = "Female";
-    else {
-      const genderMatch = joinedText.match(/gender[:\s]*(male|female)/i);
-      if (genderMatch) result.gender = genderMatch[1].charAt(0).toUpperCase() + genderMatch[1].slice(1);
+    const genderMatch = joinedText.match(/\b(male|female|पुरुष|महिला)\b/i);
+    if (genderMatch) {
+      const detectedGender = genderMatch[1].toLowerCase();
+      if (detectedGender === 'male' || detectedGender === 'पुरुष') result.gender = "Male";
+      else if (detectedGender === 'female' || detectedGender === 'महिला') result.gender = "Female";
     }
 
     // Extract name (improved logic)
-    const nameKeywords = [/Name/i, /नाम/i, /Father/i, /पिता/i, /Husband/i, /पति/i, /Guardian/i, /संरक्षक/i];
+    const nameKeywords = [/Name/i, /नाम/i, /Father/i, /पिता/i, /Husband/i, /पति/i, /Guardian/i, /संरक्षक/i, /Govt/i, /Government/i, /S\/o/i, /D\/o/i, /W\/o/i, /Voter ID/i, /Pan Card/i, /Passport/i, /Driving License/i, /EID/i, /Enrollment ID/i, /To be named as/i, /Care Of/i, /Resident of/i];
     let nameFound = false;
     for (let i = 0; i < lines.length; i++) {
-        for (const keyword of nameKeywords) {
-            if (keyword.test(lines[i])) {
-                for (let j = 1; j <= 3 && (i + j) < lines.length; j++) {
-                    const potentialName = lines[i + j].trim();
-                    if (potentialName.length > 2 && !/\d/.test(potentialName) && !/DOB|YEAR|GENDER|ADDRESS|भारत सरकार|GOVERNMENT OF INDIA/i.test(potentialName)) {
-                        result.name = potentialName;
+        const line = lines[i];
+        if (nameKeywords.some(keyword => keyword.test(line))) {
+            // Look for the name in the next few lines after a keyword
+            for (let j = 1; j <= 6 && (i + j) < lines.length; j++) { // Increased look-ahead further
+                const potentialName = lines[i + j].trim();
+                // Heuristic: Name should not contain numbers, should be reasonably long, and not contain common Aadhaar phrases
+                if (potentialName.length > 3 && !/\d/.test(potentialName) && !/DOB|YEAR|GENDER|ADDRESS|भारत सरकार|GOVERNMENT OF INDIA|Aadhaar|UIDAI|VID|Virtual ID|जन्म तिथि|Age|Email|Phone|Mobile|Occupation|Date|Enrollment/i.test(potentialName) && potentialName.split(' ').length <= 6) { // Adjusted max words and added more filter words
+                    result.name = potentialName.replace(/[^a-zA-Z\s]/g, '').trim(); // Clean the name
+                    if (result.name.length > 0) {
                         nameFound = true;
-        break;
-      }
-    }
+                        break;
+                    }
+                }
             }
-            if (nameFound) break;
         }
         if (nameFound) break;
     }
     
+    // Fallback for name extraction: look for patterns that look like names on lines not already consumed
     if (!result.name) {
         for (const line of lines) {
-            const nameGuess = line.match(/^([A-Z][a-z]+(?:\s[A-Z][a-z]+){1,3})$/);
-            if (nameGuess && !/DOB|YEAR|GENDER|ADDRESS|AADHAAR/i.test(line)) {
-                result.name = nameGuess[1];
-                break;
+            // A more flexible regex for capitalized words, allowing more words and initials
+            const nameGuess = line.match(/^[A-Z][a-z]*(?:\s[A-Z][a-z]*){0,5}(?:\s[A-Z]\.?)?$/); // Allow up to 6 words and initials
+            if (nameGuess && !/DOB|YEAR|GENDER|ADDRESS|AADHAAR|भारत सरकार|GOVERNMENT OF INDIA|UIDAI|VID|Virtual ID|जन्म तिथि|Age|Email|Phone|Mobile|Occupation|Date|Enrollment/i.test(line) && line.length > 3) {
+                result.name = nameGuess[0].replace(/[^a-zA-Z\s]/g, '').trim();
+                if (result.name.length > 0) {
+                    break;
+                }
             }
         }
     }
+    // If a name is found, remove it and surrounding keywords from joinedText to prevent interference with address extraction
+    if (result.name) {
+        const nameRegex = new RegExp(result.name.replace(/[.*+?^${}()|\[\]\\]/g, '\$&'), 'i');
+        joinedText.replace(nameRegex, '');
+    }
 
     // Extract address (improved logic)
-    const addressKeywords = [/Address/i, /पत्ता/i, /VPO/i, /Dist/i, /PIN/i, /State/i, /City/i, /ग्राम/i, /गाँव/i];
+    const addressKeywords = [/Address/i, /पत्ता/i, /Care of/i, /VPO/i, /Dist/i, /PIN/i, /State/i, /City/i, /ग्राम/i, /गाँव/i, /Taluk/i, /Street/i, /Road/i, /Colony/i, /Nagar/i, /Area/i, /Sector/i, /District/i, /House No/i, /Flat No/i, /Bldg No/i, /Vill/i, /PO/i, /PS/i, /Tehsil/i, /Sub-Dist/i, /SubDistrict/i, /Locality/i, /Landmark/i, /Cross Road/i, /Main Road/i, /Post Office/i, /Police Station/i, /Sub-division/i, /Tehsil/i, /District/i, /State/i, /PIN code/i, /Pin Code/i, /Lane/i, /Plot No/i, /Door No/i, /Mohalla/i, /Gali/i, /Block/i, /Apartment/i, /Floor/i, /Building/i, /Village/i, /Town/i, /City/i, /State/i, /Area Code/i];
     let potentialAddressLines = [];
     let captureAddress = false;
+    let pincodeFound = false;
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
+        // Check for pincode first to mark the end of address block reliably
+        if (line.match(/\b\d{6}\b/)) {
+            pincodeFound = true;
+        }
+
         if (addressKeywords.some(keyword => keyword.test(line))) {
             captureAddress = true;
-            if (!/Address|पत्ता/i.test(line)) {
+            if (!/Address|पत्ता|Care of|PIN code|Pin Code|Area Code/i.test(line)) { // Don't include the keyword itself as part of the address unless it's a part of the address
                 potentialAddressLines.push(line);
             }
             continue;
         }
         
         if (captureAddress) {
-            if (line.match(/(\d{4}\s?\d{4}\s?\d{4})|(\d{12})/) || dobMatch?.test(line) || /Name|Gender|Father|Husband|Occupation/i.test(line)) {
+            // Stop capturing if we hit other personal details, Aadhaar specific phrases, or pincode
+            if (line.match(/(\d{4}\s?\d{4}\s?\d{4})|(\d{12})/)|| dobMatch?.test(line) || /Name|Gender|Father|Husband|Occupation|Email|Phone|Mobile|DOB|YEAR|GENDER|Age|Date|Enrollment/i.test(line) || /भारत सरकार|GOVERNMENT OF INDIA|UIDAI|VID|Virtual ID|Voter ID|Pan Card|Passport|Driving License|EID|Enrollment ID/i.test(line) || pincodeFound) {
                 captureAddress = false;
-            } else if (line.length > 5) {
+            } else if (line.length > 5 && !/^[\d\s]{4,}$/.test(line) && !/Photo|Signature/i.test(line)) { // Avoid capturing long numbers as address lines or photo/signature related text
                 potentialAddressLines.push(line.trim());
             }
         }
@@ -564,10 +607,21 @@ const TenantForm = ({
     if (potentialAddressLines.length > 0) {
         result.address = potentialAddressLines.join(", ").replace(/,\s*,/g, ",").trim();
     } else {
-        const addressPattern = /(\d{1,4}[,\s-]*[A-Za-z\s]+(?:[,\s-]*[A-Za-z\s]+)*(?:Road|Rd|Street|St|Marg|Merg|Colony|Nagar|Area|Sector|District|Dist|City|Village|VPO|PIN)\s*[\d-]+(?:\s*[A-Za-z\s]+)*)/i;
+        // Fallback: search for a generic address pattern that includes pincode and other common address elements
+        const addressPattern = /(\d{1,5}[,\s-]*[A-Za-z\s]+(?:[,\s-]*[A-Za-z\s]+)*(?:Road|Rd|Street|St|Marg|Merg|Colony|Nagar|Area|Sector|District|Dist|City|Village|VPO|PIN|House No|Flat No|Bldg No|Vill|PO|PS|Tehsil|Sub-Dist|SubDistrict|Locality|Landmark|Cross Road|Main Road|Post Office|Police Station|Sub-division|Tehsil|District|State|PIN code|Pin Code|Lane|Plot No|Door No|Mohalla|Gali|Block|Apartment|Floor|Building|Town|City|State|Area Code)\s*[\d-]+(?:\s*[A-Za-z\s]+)*(?:\s*\b\d{6}\b)?)/i; // Added more keywords and optional pincode at the end
         const addressMatch = joinedText.match(addressPattern);
         if (addressMatch) result.address = addressMatch[1];
     }
+
+    // Post-processing for address to clean up common OCR errors or extraneous text
+    result.address = result.address.replace(/\s*([.,-])\s*/g, '$1').replace(/\s{2,}/g, ' ').trim();
+    result.address = result.address.replace(/(?:DOB|Date of Birth|जन्म तिथि)[:\s]*\S+/i, '').trim();
+    result.address = result.address.replace(/(?:male|female|पुरुष|महिला)/i, '').trim();
+    result.address = result.address.replace(/Aadhaar|UIDAI|VID|Virtual ID|Voter ID|Pan Card|Passport|Driving License|EID|Enrollment ID/i, '').trim();
+    result.address = result.address.replace(/Government of India|भारत सरकार/i, '').trim();
+    result.address = result.address.replace(/Email|Phone|Mobile|Occupation|Date|Enrollment|Photo|Signature/i, '').trim(); // Removed more keywords
+    result.address = result.address.replace(/[^a-zA-Z0-9\s,\-.\/]/g, '').trim(); // Remove any remaining special characters except basic punctuation
+    result.address = result.address.replace(/(^[,.\-\/\s]*)|([,.\-\/\s]*$)/g, '').trim(); // Remove leading/trailing punctuation
 
     return result;
   };
@@ -594,25 +648,12 @@ const TenantForm = ({
     );
   }
 
+  // Render different form sections based on formMode
+  const renderFormContent = () => {
+    switch (formMode) {
+      case "tenantPhotoCapture":
   return (
-    <div className="premium-tenant-container">
-      {!showOnlyAadhaar && (
-      <div className="premium-tenant-header">
-        <h1 className="premium-tenant-title">
-          {isEditMode ? "Edit Tenant" : "Add New Tenant"}
-        </h1>
-        <button
-          onClick={() => navigate("/tenants")}
-          className="premium-tenant-back"
-        >
-          <FaArrowLeft className="premium-tenant-back-icon" /> Back to Tenants
-        </button>
-      </div>
-      )}
-
-      {/* Tenant Photo Section */}
-      <div className="premium-tenant-form-section mb-6">
-        <h2 className="premium-tenant-section-title">Tenant Photo</h2>
+          <div className="premium-tenant-form-section">
         <div className="premium-tenant-photo-upload">
           {!tenantPhoto && !showTenantPhotoCapture && (
             <div className="premium-tenant-ocr-upload flex-col md:flex-row gap-4">
@@ -653,13 +694,6 @@ const TenantForm = ({
                 </button>
                 <button
                   type="button"
-                  onClick={toggleCamera}
-                  className="premium-tenant-btn premium-tenant-toggle-camera-btn"
-                >
-                  <FaRedo className="mr-2" /> Switch Camera
-                </button>
-                <button
-                  type="button"
                   onClick={cancelTenantPhotoCapture}
                   className="premium-tenant-btn premium-tenant-cancel-btn"
                 >
@@ -696,44 +730,39 @@ const TenantForm = ({
           )}
         </div>
       </div>
+        );
 
-      {/* Aadhaar Section */}
-        <div className="premium-tenant-ocr-section mb-6">
-          <button
-            type="button"
-            onClick={() => setShowOcrSection(!showOcrSection)}
-            className="premium-tenant-ocr-toggle"
-          >
-            <FaImage className="mr-2" />
-            {showOcrSection ? 'Hide Aadhaar Scan' : 'Scan Aadhaar Card'}
-          </button>
+      case "aadhaarUpload":
+        return (
+          <div className="premium-tenant-form-section">
+            {/* Show upload/capture options if no OCR image is present and not loading */}
+            {!ocrImage && !ocrLoading && (
+              <div className="premium-tenant-ocr-upload flex-col md:flex-row gap-4">
+                <label className="premium-tenant-ocr-label flex-grow">
+                  <FaUpload className="mr-2" />
+                  Upload Aadhaar Card Image
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(e, null, false)}
+                    className="hidden"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowLiveCapture(true);
+                    startCamera();
+                  }}
+                  className="premium-tenant-ocr-label premium-tenant-live-capture-btn flex-grow"
+                >
+                  <FaVideo className="mr-2" />
+                  Capture Aadhaar Card
+                </button>
+              </div>
+            )}
 
-          {showOcrSection && (
-            <div className="premium-tenant-ocr-container mt-4">
-            <div className="premium-tenant-ocr-upload flex-col md:flex-row gap-4">
-              <label className="premium-tenant-ocr-label flex-grow">
-                <FaUpload className="mr-2" />
-                Upload Aadhaar Card Image
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleImageUpload(e, null, false)}
-                  className="hidden"
-                />
-              </label>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowLiveCapture(true);
-                  startCamera();
-                }}
-                className="premium-tenant-ocr-label premium-tenant-live-capture-btn flex-grow"
-              >
-                <FaVideo className="mr-2" />
-                Capture Aadhaar Card
-              </button>
-            </div>
-
+            {/* Show live capture view */}
             {showLiveCapture && !capturedImage && (
               <div className="premium-tenant-live-capture mt-4">
                 <video ref={videoRef} autoPlay playsInline muted className="premium-tenant-video-feed"></video>
@@ -756,6 +785,7 @@ const TenantForm = ({
               </div>
             )}
 
+            {/* Show captured image preview for Aadhaar */}
             {capturedImage && (
               <div className="premium-tenant-ocr-preview mt-4">
                 <img src={URL.createObjectURL(capturedImage)} alt="Captured Aadhaar" />
@@ -782,47 +812,248 @@ const TenantForm = ({
               </div>
             )}
 
-                {ocrLoading && (
-                <div className="premium-tenant-ocr-loading mt-4">
-                    <div className="premium-tenant-ocr-spinner"></div>
-                    <span>Processing Aadhaar Card...</span>
-                  </div>
-                )}
-            {ocrImage && !ocrLoading && !showLiveCapture && (
-              <div className="premium-tenant-ocr-preview mt-4">
-                  <img src={ocrImage} alt="Aadhaar Preview" />
-                  <p className="premium-tenant-ocr-note">
-                    Review extracted details below and edit if needed
-                  </p>
+            {/* Show OCR loading spinner */}
+            {ocrLoading && (
+              <div className="premium-tenant-ocr-loading mt-4">
+                  <div className="premium-tenant-ocr-spinner"></div>
+                  <span>Processing Aadhaar Card...</span>
                 </div>
               )}
-            </div>
-          )}
+
+            {/* Show OCR preview and editable form fields only after OCR is done and image is present */}
+            {ocrImage && !ocrLoading && (
+              <div className="premium-tenant-form-container">
+                  <div className="premium-tenant-ocr-preview mt-4">
+                      <img src={ocrImage} alt="Aadhaar Preview" />
+                      <p className="premium-tenant-ocr-note">
+                          Review extracted details below and edit if needed
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOcrImage(null);
+                          setCapturedImage(null);
+                          setShowLiveCapture(false);
+                          setFormData(prev => ({ // Optionally clear Aadhaar related form data
+                            ...prev,
+                            name: "",
+                            idProofNumber: "",
+                            dob: "",
+                            gender: "",
+                            address: "",
+                          }));
+                        }}
+                        className="premium-tenant-btn premium-tenant-retake-btn mt-2"
+                      >
+                        <FaRedo className="mr-2" /> Upload Again
+                      </button>
+                  </div>
+
+                  <div className="premium-tenant-form-grid mt-4">
+                      <div className="premium-tenant-form-group">
+                          <label htmlFor="name" className="premium-tenant-form-label">
+                              <FaUser className="inline-block mr-2" /> Full Name
+                          </label>
+                          <input
+                              type="text"
+                              id="name"
+                              name="name"
+                              value={formData.name}
+                              onChange={onChange}
+                              className="premium-tenant-form-input"
+                              placeholder="Extracted Name"
+                              required
+                          />
+                      </div>
+                      <div className="premium-tenant-form-group">
+                          <label htmlFor="idProofNumber" className="premium-tenant-form-label">
+                              <FaIdCard className="inline-block mr-2" /> Aadhaar Number
+                          </label>
+                          <input
+                              type="text"
+                              id="idProofNumber"
+                              name="idProofNumber"
+                              value={formData.idProofNumber}
+                              onChange={onChange}
+                              className="premium-tenant-form-input"
+                              placeholder="Extracted Aadhaar Number"
+                              required
+                          />
+                      </div>
+                      <div className="premium-tenant-form-group">
+                          <label htmlFor="dob" className="premium-tenant-form-label">
+                              <FaCalendarAlt className="inline-block mr-2" /> Date of Birth
+                          </label>
+                          <input
+                              type="date"
+                              id="dob"
+                              name="dob"
+                              value={formData.dob || ""}
+                              onChange={onChange}
+                              className="premium-tenant-form-input"
+                              max={new Date().toISOString().split("T")[0]}
+                              placeholder="Extracted DOB"
+                              required
+                          />
+                      </div>
+                      <div className="premium-tenant-form-group">
+                          <label htmlFor="gender" className="premium-tenant-form-label">
+                              <FaUserFriends className="inline-block mr-2" /> Gender
+                          </label>
+                          <select
+                              id="gender"
+                              name="gender"
+                              value={formData.gender}
+                              onChange={onChange}
+                              className="premium-tenant-form-select"
+                              required
+                          >
+                              <option value="">Select Gender</option>
+                              <option value="Male">Male</option>
+                              <option value="Female">Female</option>
+                              <option value="Other">Other</option>
+                          </select>
+                      </div>
+                      <div className="premium-tenant-form-group col-span-2">
+                          <label htmlFor="address" className="premium-tenant-form-label">
+                              <FaHome className="inline-block mr-2" /> Address
+                          </label>
+                          <textarea
+                              id="address"
+                              name="address"
+                              value={formData.address}
+                              onChange={onChange}
+                              rows="3"
+                              className="premium-tenant-form-input"
+                              placeholder="Extracted Address"
+                              required
+                          ></textarea>
+                      </div>
+                  </div>
+              </div>
+            )}
+          </div>
+        );
+
+      case "additionalDetails":
+        return (
+          <div className="premium-tenant-form-grid">
+            <div className="premium-tenant-form-group">
+              <label htmlFor="email" className="premium-tenant-form-label">
+                <FaEnvelope className="inline-block mr-2" /> Email Address
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={onChange}
+                className="premium-tenant-form-input"
+                placeholder="Enter email address (optional)"
+              />
         </div>
 
-      {!showOnlyAadhaar && preselectedRoomId && (
-        <div className="premium-tenant-alert">
-          <div className="flex items-center">
-            <FaCheckCircle className="mr-2" size={18} />
-            <div>
-              <p className="premium-tenant-alert-title">
-                Room pre-selected from Rooms page
-              </p>
-              <p className="premium-tenant-alert-text">
-                You can change the room if needed.
-              </p>
+            <div className="premium-tenant-form-group">
+              <label htmlFor="occupation" className="premium-tenant-form-label">
+                <FaBriefcase className="inline-block mr-2" /> Occupation
+              </label>
+              <input
+                type="text"
+                id="occupation"
+                name="occupation"
+                value={formData.occupation}
+                onChange={onChange}
+                className="premium-tenant-form-input"
+                placeholder="Enter occupation (optional)"
+              />
             </div>
+
+            <div className="premium-tenant-form-group">
+              <label htmlFor="roomId" className="premium-tenant-form-label">
+                <FaBuilding className="inline-block mr-2" /> Room
+              </label>
+              <select
+                id="roomId"
+                name="roomId"
+                value={formData.roomId}
+                onChange={onChange}
+                className="premium-tenant-form-select"
+                required
+              >
+                <option value="">Select a room</option>
+                {rooms.map((room) => (
+                  <option
+                    key={room._id}
+                    value={room._id}
+                    disabled={room.occupiedBeds >= room.capacity}
+                  >
+                    Floor {room.floorNumber}, Room {room.roomNumber}
+                    {room.occupiedBeds > 0
+                      ? ` (${room.occupiedBeds}/${room.capacity} occupied)`
+                      : " (Vacant)"}
+                  </option>
+                ))}
+              </select>
           </div>
+
+            {formData.roomId && (
+              <div className="premium-tenant-form-group">
+                <label htmlFor="bedNumber" className="premium-tenant-form-label">
+                  <FaBed className="inline-block mr-2" /> Bed Number
+                </label>
+                <select
+                  id="bedNumber"
+                  name="bedNumber"
+                  value={formData.bedNumber.toString()}
+                  onChange={onChange}
+                  className="premium-tenant-form-select"
+                  required
+                >
+                  <option value="">Select a bed</option>
+                  {formData.roomId && rooms.find(r => r._id === formData.roomId) &&
+                    Array.from({ length: rooms.find(r => r._id === formData.roomId).capacity }, (_, i) => {
+                      const selectedRoom = rooms.find(r => r._id === formData.roomId);
+                      const roomTenants = getTenantsByRoom(formData.roomId);
+                      const isBedOccupied = roomTenants.some(
+                        tenant => tenant.bedNumber === (i+1)
+                      );
+
+                      return (
+                        <option
+                          key={i+1}
+                          value={(i+1).toString()}
+                          disabled={isBedOccupied}
+                        >
+                          Bed {i+1} {isBedOccupied ? '(Occupied)' : ''}
+                        </option>
+                      );
+                    })
+                  }
+                </select>
         </div>
       )}
 
-      <div className="premium-tenant-form-card">
-        <div className="premium-tenant-form-body">
-          <form onSubmit={onSubmit} ref={formRef}>
+            <div className="premium-tenant-form-group">
+              <label htmlFor="joiningDate" className="premium-tenant-form-label">
+                <FaCalendarAlt className="inline-block mr-2" /> Joining Date
+              </label>
+              <input
+                type="date"
+                id="joiningDate"
+                name="joiningDate"
+                value={formData.joiningDate}
+                onChange={onChange}
+                className="premium-tenant-form-input"
+                required
+              />
+            </div>
+          </div>
+        );
+
+      default:
+        return (
             <div className="premium-tenant-form-grid">
-              {/* Only show these fields if not in Aadhaar-only mode */}
-              {!showOnlyAadhaar && (
-                <>
+            {/* Original form fields */}
               <div className="premium-tenant-form-group">
                 <label htmlFor="name" className="premium-tenant-form-label">
                   <FaUser className="inline-block mr-2" /> Full Name
@@ -831,7 +1062,7 @@ const TenantForm = ({
                   type="text"
                   id="name"
                   name="name"
-                  value={name}
+                value={formData.name}
                   onChange={onChange}
                   className="premium-tenant-form-input"
                   required
@@ -847,7 +1078,7 @@ const TenantForm = ({
                   type="email"
                   id="email"
                   name="email"
-                  value={email}
+                value={formData.email}
                   onChange={onChange}
                   className="premium-tenant-form-input"
                   placeholder="Enter email address (optional)"
@@ -862,7 +1093,7 @@ const TenantForm = ({
                   type="text"
                   id="phone"
                   name="phone"
-                  value={phone}
+                value={formData.phone}
                   onChange={onChange}
                   className="premium-tenant-form-input"
                   required
@@ -871,39 +1102,30 @@ const TenantForm = ({
               </div>
 
               <div className="premium-tenant-form-group">
-                <label
-                  htmlFor="occupation"
-                  className="premium-tenant-form-label"
-                >
+              <label htmlFor="occupation" className="premium-tenant-form-label">
                   <FaBriefcase className="inline-block mr-2" /> Occupation
                 </label>
                 <input
                   type="text"
                   id="occupation"
                   name="occupation"
-                  value={occupation}
+                value={formData.occupation}
                   onChange={onChange}
                   className="premium-tenant-form-input"
                   placeholder="Enter occupation (optional)"
                 />
               </div>
-                </>
-              )}
 
-              {/* Always show these fields, but populate from OCR if available */}
               <div className="premium-tenant-form-group">
-                <label
-                  htmlFor="idProofType"
-                  className="premium-tenant-form-label"
-                >
+              <label htmlFor="idProofType" className="premium-tenant-form-label">
                   <FaIdCard className="inline-block mr-2" /> ID Proof Type
                 </label>
                 <select
                   id="idProofType"
                   name="idProofType"
-                  value={idProofType}
+                value={formData.idProofType}
                   onChange={onChange}
-                  className="premium-tenant-form-select"
+                className="premium-tenant-form-select"
                   required
                 >
                   {idProofTypes.map((type) => (
@@ -915,17 +1137,14 @@ const TenantForm = ({
               </div>
 
               <div className="premium-tenant-form-group">
-                <label
-                  htmlFor="idProofNumber"
-                  className="premium-tenant-form-label"
-                >
+              <label htmlFor="idProofNumber" className="premium-tenant-form-label">
                   <FaIdCard className="inline-block mr-2" /> ID Proof Number
                 </label>
                 <input
                   type="text"
                   id="idProofNumber"
                   name="idProofNumber"
-                  value={idProofNumber}
+                value={formData.idProofNumber}
                   onChange={onChange}
                   className="premium-tenant-form-input"
                   required
@@ -956,7 +1175,7 @@ const TenantForm = ({
                 <select
                   id="gender"
                   name="gender"
-                  value={gender}
+                value={formData.gender}
                   onChange={onChange}
                   className="premium-tenant-form-select"
                 >
@@ -974,7 +1193,7 @@ const TenantForm = ({
                 <textarea
                   id="address"
                   name="address"
-                  value={address}
+                value={formData.address}
                   onChange={onChange}
                   rows="3"
                   className="premium-tenant-form-input"
@@ -982,21 +1201,6 @@ const TenantForm = ({
                 ></textarea>
               </div>
 
-              {/* Display OCR image within the form if available */}
-              {ocrImage && (
-                <div className="premium-tenant-form-group col-span-2">
-                  <label className="premium-tenant-form-label">
-                    <FaIdCard className="inline-block mr-2" /> Scanned Aadhaar Preview
-                  </label>
-                  <div className="premium-tenant-aadhaar-in-form-preview">
-                    <img src={ocrImage} alt="Aadhaar in form" />
-                  </div>
-                </div>
-              )}
-
-              {/* Only show room and bed selection if not in Aadhaar-only mode */}
-              {!showOnlyAadhaar && (
-                <>
               <div className="premium-tenant-form-group">
                 <label htmlFor="roomId" className="premium-tenant-form-label">
                   <FaBuilding className="inline-block mr-2" /> Room
@@ -1004,43 +1208,28 @@ const TenantForm = ({
                 <select
                   id="roomId"
                   name="roomId"
-                  value={roomId}
+                value={formData.roomId}
                   onChange={onChange}
-                  className={`premium-tenant-form-select ${
-                    preselectedRoomId ? "border-green-500 bg-green-50" : ""
-                  }`}
+                className="premium-tenant-form-select"
                   required
-                  style={{
-                    transition: "all 0.3s ease",
-                    borderColor: preselectedRoomId ? "#10b981" : "",
-                    boxShadow: preselectedRoomId
-                      ? "0 0 0 3px rgba(16, 185, 129, 0.1)"
-                      : "",
-                  }}
                 >
                   <option value="">Select a room</option>
                   {rooms.map((room) => (
                     <option
                       key={room._id}
                       value={room._id}
-                      disabled={
-                        room.occupiedBeds >= room.capacity &&
-                        room._id !== roomId
-                      }
+                    disabled={room.occupiedBeds >= room.capacity}
                     >
                       Floor {room.floorNumber}, Room {room.roomNumber}
                       {room.occupiedBeds > 0
                         ? ` (${room.occupiedBeds}/${room.capacity} occupied)`
                         : " (Vacant)"}
-                      {room._id === preselectedRoomId
-                        ? " ← Selected from Rooms page"
-                        : ""}
                     </option>
                   ))}
                 </select>
               </div>
 
-              {roomId && (
+            {formData.roomId && (
                 <div className="premium-tenant-form-group">
                   <label htmlFor="bedNumber" className="premium-tenant-form-label">
                     <FaBed className="inline-block mr-2" /> Bed Number
@@ -1048,18 +1237,16 @@ const TenantForm = ({
                   <select
                     id="bedNumber"
                     name="bedNumber"
-                    value={bedNumber.toString()}
+                  value={formData.bedNumber.toString()}
                     onChange={onChange}
-                    className={`premium-tenant-form-select ${
-                      preselectedBedNumber ? "border-green-500 bg-green-50" : ""
-                    }`}
+                  className="premium-tenant-form-select"
                     required
                   >
                     <option value="">Select a bed</option>
-                    {roomId && rooms.find(r => r._id === roomId) &&
-                      Array.from({ length: rooms.find(r => r._id === roomId).capacity }, (_, i) => {
-                        const selectedRoom = rooms.find(r => r._id === roomId);
-                        const roomTenants = getTenantsByRoom(roomId);
+                  {formData.roomId && rooms.find(r => r._id === formData.roomId) &&
+                    Array.from({ length: rooms.find(r => r._id === formData.roomId).capacity }, (_, i) => {
+                      const selectedRoom = rooms.find(r => r._id === formData.roomId);
+                      const roomTenants = getTenantsByRoom(formData.roomId);
                         const isBedOccupied = roomTenants.some(
                           tenant => tenant.bedNumber === (i+1) && 
                             (!isEditMode || (isEditMode && tenant._id !== id))
@@ -1072,32 +1259,24 @@ const TenantForm = ({
                             disabled={isBedOccupied}
                           >
                             Bed {i+1} {isBedOccupied ? '(Occupied)' : ''}
-                            {isEditMode && (i+1) === bedNumber ? ' (Current)' : ''}
+                          {isEditMode && (i+1) === formData.bedNumber ? ' (Current)' : ''}
                           </option>
                         );
                       })
                     }
                   </select>
-                  {isEditMode && (
-                    <p className="text-sm text-gray-500 mt-1">
-                      You can change the bed number. Other occupied beds are disabled.
-                    </p>
-                  )}
                 </div>
               )}
 
               <div className="premium-tenant-form-group">
-                <label
-                  htmlFor="joiningDate"
-                  className="premium-tenant-form-label"
-                >
+              <label htmlFor="joiningDate" className="premium-tenant-form-label">
                   <FaCalendarAlt className="inline-block mr-2" /> Joining Date
                 </label>
                 <input
                   type="date"
                   id="joiningDate"
                   name="joiningDate"
-                  value={joiningDate}
+                value={formData.joiningDate}
                   onChange={onChange}
                   className="premium-tenant-form-input"
                   required
@@ -1112,7 +1291,7 @@ const TenantForm = ({
                   <select
                     id="active"
                     name="active"
-                    value={active.toString()}
+                  value={formData.active.toString()}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
@@ -1121,8 +1300,8 @@ const TenantForm = ({
                     }
                     className="premium-tenant-form-select"
                     style={{
-                      borderColor: active ? "#10b981" : "#ef4444",
-                      backgroundColor: active
+                    borderColor: formData.active ? "#10b981" : "#ef4444",
+                    backgroundColor: formData.active
                         ? "rgba(16, 185, 129, 0.05)"
                         : "rgba(239, 68, 68, 0.05)",
                     }}
@@ -1131,22 +1310,48 @@ const TenantForm = ({
                     <option value="false">Inactive</option>
                   </select>
                 </div>
-                  )}
-                </>
               )}
             </div>
+        );
+    }
+  };
+
+  return (
+    <div className="premium-tenant-container">
+      {!showOnlyAadhaar && formMode === "full" && (
+        <div className="premium-tenant-header">
+          <h1 className="premium-tenant-title">
+            {isEditMode ? "Edit Tenant" : "Add New Tenant"}
+          </h1>
+          <button
+            onClick={() => navigate("/tenants")}
+            className="premium-tenant-back"
+          >
+            <FaArrowLeft className="premium-tenant-back-icon" /> Back to Tenants
+          </button>
+        </div>
+      )}
+
+      <div className="premium-tenant-form-card">
+        <div className="premium-tenant-form-body">
+          <form onSubmit={onSubmit} ref={formRef}>
+            {renderFormContent()}
 
             <div className="premium-tenant-form-footer">
               <button
                 type="submit"
-                disabled={loading || (!tenantPhoto && !showOnlyAadhaar)}
+                disabled={loading || (formMode === "tenantPhotoCapture" && !tenantPhoto)}
                 className="premium-tenant-submit-btn"
               >
                 <FaSave className="mr-2" />
                 {loading
                   ? "Saving..."
-                  : showOnlyAadhaar
-                  ? "Continue with Aadhaar Details"
+                  : formMode === "tenantPhotoCapture"
+                  ? "Continue with Photo"
+                  : formMode === "aadhaarUpload"
+                  ? "Continue with Aadhaar"
+                  : formMode === "additionalDetails"
+                  ? "Continue with Details"
                   : isEditMode
                   ? "Update Tenant"
                   : "Add Tenant"}
@@ -1159,4 +1364,4 @@ const TenantForm = ({
   );
 };
 
-export default TenantForm;
+export default TenantForm; 
