@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-<<<<<<< HEAD
 import { FaCamera, FaArrowRight, FaArrowLeft, FaCheckCircle, FaMobile, FaIdCard, FaUser } from 'react-icons/fa';
-=======
-import { FaCamera, FaArrowRight, FaArrowLeft, FaCheckCircle, FaMobile, FaIdCard, FaUser, FaUpload } from 'react-icons/fa';
->>>>>>> 87e0efc4742028bcb3f4bb5a6fb353944beaf84c
 import { showToast } from '../utils/toast';
 import TenantForm from './TenantForm';
 
@@ -16,14 +12,6 @@ const TenantOnboarding = () => {
   const [tenantPhoto, setTenantPhoto] = useState(null);
   const [aadhaarData, setAadhaarData] = useState(null);
   const [fullFormData, setFullFormData] = useState(null);
-  const [showTenantPhotoUpload, setShowTenantPhotoUpload] = useState(null);
-  const [showAadhaarUpload, setShowAadhaarUpload] = useState(null);
-
-  // Get parameters from URL query parameters if available
-  const queryParams = new URLSearchParams(location.search);
-  const preselectedRoomId = queryParams.get("roomId");
-  const preselectedBedName = queryParams.get("bedName");
-  const returnToRoom = queryParams.get("returnToRoom") === "true";
 
   // Get parameters from URL query parameters if available
   const queryParams = new URLSearchParams(location.search);
@@ -33,13 +21,8 @@ const TenantOnboarding = () => {
 
   const steps = [
     { id: 1, title: 'Mobile Number Verification', icon: FaMobile },
-<<<<<<< HEAD
     { id: 2, title: 'Live Photo Capture', icon: FaCamera },
     { id: 3, title: 'Aadhaar Card Upload', icon: FaIdCard },
-=======
-    { id: 2, title: 'Tenant Photo', icon: FaCamera },
-    { id: 3, title: 'Aadhaar Card', icon: FaIdCard },
->>>>>>> 87e0efc4742028bcb3f4bb5a6fb353944beaf84c
     { id: 4, title: 'Additional Details', icon: FaUser },
     { id: 5, title: 'Review & Submit', icon: FaCheckCircle }
   ];
@@ -117,100 +100,23 @@ const TenantOnboarding = () => {
       case 2:
         return (
           <div className="premium-tenant-step">
-            <h2 className="text-2xl font-bold mb-6">Tenant Photo</h2>
-            <div className="flex flex-col gap-4">
-              <button
-                type="button"
-                onClick={() => setShowTenantPhotoUpload(true)}
-                className="premium-tenant-submit-btn"
-              >
-                <FaUpload className="mr-2" /> Upload Photo from Device
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowTenantPhotoUpload(false)}
-                className="premium-tenant-submit-btn"
-              >
-                <FaCamera className="mr-2" /> Capture Live Photo
-              </button>
-            </div>
-
-            {showTenantPhotoUpload !== null && (
-              showTenantPhotoUpload ? (
-                <div className="mt-6">
-                  <TenantForm 
-                    formMode="tenantPhotoUpload" 
-                    onComplete={handleTenantPhotoCaptured} 
-                  />
-                </div>
-              ) : (
-                <div className="mt-6">
+            <h2 className="text-2xl font-bold mb-6">Capture Live Photo</h2>
             <TenantForm 
               formMode="tenantPhotoCapture" 
               onComplete={handleTenantPhotoCaptured} 
             />
-                </div>
-              )
-            )}
-
-            <button
-              type="button"
-              onClick={() => setCurrentStep(prev => prev - 1)}
-              className="premium-tenant-back-btn mt-6"
-            >
-              <FaArrowLeft className="mr-2" /> Back
-            </button>
           </div>
         );
 
       case 3:
         return (
           <div className="premium-tenant-step">
-            <h2 className="text-2xl font-bold mb-6">Aadhaar Card</h2>
-            <div className="flex flex-col gap-4">
-              <button
-                type="button"
-                onClick={() => setShowAadhaarUpload(true)}
-                className="premium-tenant-submit-btn"
-              >
-                <FaUpload className="mr-2" /> Upload Aadhaar Image
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowAadhaarUpload(false)}
-                className="premium-tenant-submit-btn"
-              >
-                <FaCamera className="mr-2" /> Capture Live Aadhaar Photo
-              </button>
-            </div>
-
-            {showAadhaarUpload !== null && (
-              showAadhaarUpload ? (
-                <div className="mt-6">
-                  <TenantForm
-                    formMode="aadhaarUploadFile"
-                    onAadhaarData={handleAadhaarData}
-                    onComplete={handleAadhaarReviewComplete}
-                  />
-                </div>
-              ) : (
-                <div className="mt-6">
+            <h2 className="text-2xl font-bold mb-6">Upload Aadhaar Card</h2>
             <TenantForm
               formMode="aadhaarUpload"
               onAadhaarData={handleAadhaarData}
               onComplete={handleAadhaarReviewComplete}
             />
-                </div>
-              )
-            )}
-
-            <button
-              type="button"
-              onClick={() => setCurrentStep(prev => prev - 1)}
-              className="premium-tenant-back-btn mt-6"
-            >
-              <FaArrowLeft className="mr-2" /> Back
-            </button>
           </div>
         );
 
@@ -269,11 +175,7 @@ const TenantOnboarding = () => {
                     <p className="font-bold text-right">Email:</p><p>{fullFormData.email || 'N/A'}</p>
                     <p className="font-bold text-right">Occupation:</p><p>{fullFormData.occupation || 'N/A'}</p>
                     <p className="font-bold text-right">Room:</p><p>{fullFormData.roomId || 'N/A'}</p>
-<<<<<<< HEAD
                     <p className="font-bold text-right">Bed:</p><p>{fullFormData.bedNumber || 'N/A'}</p>
-=======
-                    <p className="font-bold text-right">Bed:</p><p>{fullFormData.bedName || 'N/A'}</p>
->>>>>>> 87e0efc4742028bcb3f4bb5a6fb353944beaf84c
                     <p className="font-bold text-right">Joining Date:</p><p>{fullFormData.joiningDate || 'N/A'}</p>
                   </div>
                 </div>

@@ -106,9 +106,8 @@ export const TenantProvider = ({ children }) => {
     }, 10000);
 
     return () => clearInterval(pollingInterval);
-  }, []); 
+  }, [location.pathname, fetchTenants, checkForUpdates]);
 
-  // [location.pathname, fetchTenants, checkForUpdates]
   const getTenantsByRoom = useCallback((roomId) => {
     return tenants.filter((tenant) => {
       if (typeof tenant.roomId === "object" && tenant.roomId !== null) {

@@ -28,10 +28,6 @@ const RoomForm = () => {
     rentAmount: "",
     amenities: [],
     description: "",
-    bedNames: ["1A"], // default for 1 bed
-    accommodationType: "PG",
-    checkInDate: "",
-    checkOutDate: "",
   });
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(isEditMode);
@@ -44,7 +40,6 @@ const RoomForm = () => {
     rentAmount,
     amenities,
     description,
-    bedNames,
   } = formData;
 
   // Amenities are now handled by the AmenitiesSelector component
@@ -73,7 +68,6 @@ const RoomForm = () => {
         rentAmount: room.rentAmount,
         amenities: room.amenities || [],
         description: room.description || "",
-        bedNames: room.bedNames || ["1A"],
       });
       setFetchLoading(false);
     } else if (!triedFetch) {
@@ -94,7 +88,6 @@ const RoomForm = () => {
               rentAmount: room.rentAmount,
               amenities: room.amenities || [],
               description: room.description || "",
-              bedNames: room.bedNames || ["1A"],
             });
             setFetchLoading(false);
             // Also update the rooms context
@@ -142,24 +135,6 @@ const RoomForm = () => {
     setFormData({ ...formData, amenities: selectedAmenities });
   };
 
-  const handleBedNameChange = (idx, value) => {
-    const newBedNames = [...formData.bedNames];
-    newBedNames[idx] = value.toUpperCase();
-    setFormData({ ...formData, bedNames: newBedNames });
-  };
-
-  // Ensure bedNames array matches capacity
-  useEffect(() => {
-    if (formData.capacity > 0) {
-      setFormData((prev) => {
-        const newBedNames = [...(prev.bedNames || [])];
-        while (newBedNames.length < formData.capacity) newBedNames.push("");
-        while (newBedNames.length > formData.capacity) newBedNames.pop();
-        return { ...prev, bedNames: newBedNames };
-      });
-    }
-  }, [formData.capacity]);
-
   const onSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -169,11 +144,10 @@ const RoomForm = () => {
       !formData.floorNumber ||
       !formData.roomNumber ||
       !formData.rentAmount ||
-      formData.capacity < 1 ||
-      formData.bedNames.some((name) => !name.trim())
+      formData.capacity < 1
     ) {
       setLoading(false);
-      alert("Please fill all required fields with valid values, including all bed names.");
+      alert("Please fill all required fields with valid values.");
       return;
     }
 
@@ -194,8 +168,8 @@ const RoomForm = () => {
       setLoading(false);
       alert(
         err?.response?.data?.error ||
-        err?.message ||
-        "Failed to save room. Please try again."
+          err?.message ||
+          "Failed to save room. Please try again."
       );
       console.error("Error saving room:", err);
     }
@@ -324,90 +298,27 @@ const RoomForm = () => {
             </div>
 
             <div>
-              <label htmlFor="accommodationType" className="block text-sm font-medium text-gray-700 mb-1">Accommodation Type</label>
-              <select
-                id="accommodationType"
-                name="accommodationType"
-                value={formData.accommodationType}
+              <label
+                htmlFor="rentAmount"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Rent Amount (₹/month)
+              </label>
+              <input
+                type="number"
+                id="rentAmount"
+                name="rentAmount"
+                value={rentAmount}
                 onChange={onChange}
                 className="form-input"
                 required
-              >
-                <option value="PG">PG</option>
-                <option value="Dormitory">Dormitory</option>
-              </select>
+                min="0"
+              />
             </div>
-            {/* Rent Input based on selection */}
-            {formData.accommodationType === "PG" ? (
-              <div>
-                <label htmlFor="rentAmount" className="block text-sm font-medium text-gray-700 mb-1">
-                  Rent Amount (₹/month)
-                </label>
-                <input
-                  type="number"
-                  id="rentAmount"
-                  name="rentAmount"
-                  value={formData.rentAmount}
-                  onChange={onChange}
-                  className="form-input"
-                  required
-                  min="0"
-                />
-              </div>
-            ) : (
-              <>
-                <div>
-                  <label htmlFor="rentAmount" className="block text-sm font-medium text-gray-700 mb-1">
-                    Rent Amount (₹/day)
-                  </label>
-                  <input
-                    type="number"
-                    id="rentAmount"
-                    name="rentAmount"
-                    value={formData.rentAmount}
-                    onChange={onChange}
-                    className="form-input"
-                    required
-                    min="0"
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ">
-                  <div>
-                    <label htmlFor="checkInDate" className="block text-sm font-medium text-gray-700 mb-1">
-                      Check-In Date
-                    </label>
-                    <input
-                      type="date"
-                      id="checkInDate"
-                      name="checkInDate"
-                      value={formData.checkInDate}
-                      onChange={onChange}
-                      className="form-input"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="checkOutDate" className="block text-sm font-medium text-gray-700 mb-1">
-                      Check-Out Date
-                    </label>
-                    <input
-                      type="date"
-                      id="checkOutDate"
-                      name="checkOutDate"
-                      value={formData.checkOutDate}
-                      onChange={onChange}
-                      className="form-input"
-                      required
-                    />
-                  </div>
-
-
-                </div>
-              </>
-            )}
           </div>
+
           <div className="mt-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1 mt-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Amenities
             </label>
             <AmenitiesSelector
@@ -415,6 +326,7 @@ const RoomForm = () => {
               onChange={handleAmenitiesChange}
             />
           </div>
+
           <div className="mt-6">
             <label
               htmlFor="description"
@@ -430,27 +342,6 @@ const RoomForm = () => {
               rows="3"
               className="form-input"
             ></textarea>
-          </div>
-
-          <div className="mt-6">
-            <label className="block text-sm font-medium text-gray-700 mt-4 mb-1">
-              Bed Names (required):
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-              {bedNames.map((name, idx) => (
-                <input
-                  key={idx}
-                  type="text"
-                  required
-                  maxLength={4}
-                  value={name}
-                  onChange={e => handleBedNameChange(idx, e.target.value)}
-                  placeholder={`e.g. ${Math.floor(idx / 2) + 1}${String.fromCharCode(65 + (idx % 2))}`}
-                  className="border rounded px-2 py-2 text-center text-lg font-semibold focus:ring-2 focus:ring-blue-400"
-                  style={{ textTransform: 'uppercase' }}
-                />
-              ))}
-            </div>
           </div>
 
           <div className="mt-6">

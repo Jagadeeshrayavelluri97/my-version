@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Tesseract from 'tesseract.js';
-import api from '../utils/api';
 import {
   FaSave,
   FaArrowLeft,
@@ -48,7 +47,7 @@ const TenantForm = ({
   // Get parameters from URL query parameters if available
   const queryParams = new URLSearchParams(location.search);
   const preselectedRoomId = queryParams.get("roomId");
-  const preselectedBedName = queryParams.get("bedName");
+  const preselectedBedNumber = queryParams.get("bedNumber");
   const returnToRoom = queryParams.get("returnToRoom") === "true";
 
   // OCR State
@@ -65,22 +64,9 @@ const TenantForm = ({
 
   // Add new state for tenant photo
   const [tenantPhoto, setTenantPhoto] = useState(null);
-<<<<<<< HEAD
   const [showTenantPhotoCapture, setShowTenantPhotoCapture] = useState(formMode === "tenantPhotoCapture");
   const [tenantPhotoStream, setTenantPhotoStream] = useState(null);
-=======
-  const [showTenantPhotoCapture, setShowTenantPhotoCapture] = useState(false);
-  const [capturedTenantPhotoPreview, setCapturedTenantPhotoPreview] = useState(null);
-  const [showTenantPhotoUploadInput, setShowTenantPhotoUploadInput] = useState(false);
->>>>>>> 87e0efc4742028bcb3f4bb5a6fb353944beaf84c
   const tenantVideoRef = useRef(null);
-  const [tenantPhotoStream, setTenantPhotoStream] = useState(null);
-
-  // Add new state for Aadhaar photo capture/upload
-  const [capturedAadhaarPhotoPreview, setCapturedAadhaarPhotoPreview] = useState(null);
-  const [showAadhaarCapture, setShowAadhaarCapture] = useState(false);
-  const [showAadhaarUploadInput, setShowAadhaarUploadInput] = useState(false);
-  const [aadhaarInputMode, setAadhaarInputMode] = useState(null); // 'upload', 'camera', or null for initial choice
 
   // Initialize form data with initialData if provided
   const [formData, setFormData] = useState({
@@ -96,7 +82,7 @@ const TenantForm = ({
     idProofNumber: initialData?.idProofNumber || "",
     occupation: initialData?.occupation || "",
     roomId: initialData?.roomId || preselectedRoomId || "",
-    bedName: initialData?.bedName || preselectedBedName || "",
+    bedNumber: initialData?.bedNumber !== undefined ? Number(initialData.bedNumber) : (preselectedBedNumber ? Number(preselectedBedNumber) : ""),
     joiningDate: initialData?.joiningDate ? new Date(initialData.joiningDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
     active: initialData?.active !== undefined ? initialData.active : true,
     dob: initialData?.dob ? new Date(initialData.dob).toISOString().split("T")[0] : "",
@@ -144,7 +130,7 @@ const TenantForm = ({
     idProofNumber,
     occupation,
     roomId,
-    bedName,
+    bedNumber,
     joiningDate,
     active,
     dob,
@@ -194,7 +180,7 @@ const TenantForm = ({
             const formattedTenant = {
               ...tenant,
               joiningDate: tenant.joiningDate ? new Date(tenant.joiningDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-              bedName: tenant.bedName || "",
+              bedNumber: Number(tenant.bedNumber),
               dob: tenant.dob ? new Date(tenant.dob).toISOString().split("T")[0] : "",
               roomId: tenant.roomId || "",
             };
@@ -247,8 +233,8 @@ const TenantForm = ({
         }
       }
       
-      if (name === "bedName") {
-        newValue = value; // Keep as string
+      if (name === "bedNumber") {
+        newValue = value === "" ? "" : Number(value);
       }
       
       // If changing room, check if the new room has capacity
@@ -333,7 +319,6 @@ const TenantForm = ({
         ...formData,
         dob: formData.dob ? new Date(formData.dob).toISOString() : null,
         joiningDate: new Date(formData.joiningDate).toISOString(),
-        bedName: formData.bedName,
       };
 
       const success = isEditMode
@@ -374,49 +359,22 @@ const TenantForm = ({
         console.error("No file or captured blob provided to handleImageUpload.");
         showToast("Failed to process image: No valid image data.", { type: "error" });
         return;
-<<<<<<< HEAD
     }
     
     if (isTenantPhoto) {
       setTenantPhoto(URL.createObjectURL(file));
       return;
-=======
->>>>>>> 87e0efc4742028bcb3f4bb5a6fb353944beaf84c
     }
     
-    // Logic for Tenant Photo
-    if (isTenantPhoto) {
-      const photoUrl = URL.createObjectURL(file);
-      setTenantPhoto(photoUrl); // Store the actual photo URL
-      setCapturedTenantPhotoPreview(photoUrl); // Set the URL for preview
-      // Do NOT call onComplete here. It will be called on 'Confirm Photo'
-      return; // Stop processing further for tenant photos
-    }
+    setOcrLoading(true);
+    setOcrImage(URL.createObjectURL(file));
     
-<<<<<<< HEAD
     Tesseract.recognize(
       file,
       'eng+hin',
       { logger: m => console.log(m) }
     ).then(({ data: { text } }) => {
       const extractedData = extractAadhaarDetails(text);
-=======
-    // Logic for Aadhaar Card (isTenantPhoto is false)
-    setOcrLoading(true);
-    // Set Aadhaar preview immediately after file selection/capture
-    const aadhaarPreviewUrl = URL.createObjectURL(file);
-    setCapturedAadhaarPhotoPreview(aadhaarPreviewUrl);
-    
-    const formData = new FormData();
-    formData.append('aadhaarImage', file);
-
-    api.post('/tenants/aadhaar-ocr', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    }).then(response => {
-      const extractedData = response.data.data;
->>>>>>> 87e0efc4742028bcb3f4bb5a6fb353944beaf84c
       console.log("Extracted Aadhaar Data:", extractedData);
       if (extractedData.idProofNumber) {
         updateFormWithAadhaarData(extractedData);
@@ -428,41 +386,25 @@ const TenantForm = ({
         showToast("Could not extract Aadhaar details. Please try again or enter manually.", { type: "error" });
       }
       setOcrLoading(false);
-      // Do NOT call onComplete immediately for Aadhaar. User will confirm after reviewing extracted data.
     }).catch(err => {
-      console.error("Aadhaar OCR Error:", err);
-      showToast(err.response?.data?.error || "Failed to process Aadhaar image", { type: "error" });
+      console.error("OCR Error:", err);
+      showToast("Failed to process Aadhaar image", { type: "error" });
       setOcrLoading(false);
-      setCapturedAadhaarPhotoPreview(null); // Clear preview on error
-      // Also clear any partially extracted data if the OCR fails
-      setFormData(prev => ({
-        ...prev,
-        name: "",
-        idProofNumber: "",
-        dob: "",
-        gender: "",
-        address: "",
-      }));
     });
   };
 
   const startCamera = async () => {
-    setCapturedAadhaarPhotoPreview(null);
-    setOcrImage(null);
-    setOcrLoading(false);
-    setShowAadhaarUploadInput(false);
+    setCapturedImage(null);
     try {
       const cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } } });
       if (videoRef.current) {
         videoRef.current.srcObject = cameraStream;
       }
       setStream(cameraStream);
-      setShowAadhaarCapture(true);
     } catch (err) {
       console.error("Error accessing camera:", err);
       showToast("Failed to access camera. Please ensure camera permissions are granted.", { type: "error" });
       setStream(null);
-      setShowAadhaarCapture(false);
     }
   };
 
@@ -482,74 +424,32 @@ const TenantForm = ({
       context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
       
       canvas.toBlob((blob) => {
-        const aadhaarPhotoUrl = URL.createObjectURL(blob);
-        setCapturedAadhaarPhotoPreview(aadhaarPhotoUrl);
-        handleImageUpload(null, blob, false);
+        setCapturedImage(blob);
+        handleImageUpload(null, blob);
         stopCamera();
       }, 'image/png');
     }
   };
 
-  const confirmAadhaarPhoto = () => {
-    if (capturedAadhaarPhotoPreview && onComplete) {
-      onComplete(formData);
-      setCapturedAadhaarPhotoPreview(null);
-      setOcrImage(null);
-      setAadhaarInputMode(null); // Reset option
-    }
-  };
-
-  const retakeAadhaarPhoto = () => {
-    setCapturedAadhaarPhotoPreview(null);
-    setOcrImage(null);
-    setOcrLoading(false);
-    setShowAadhaarCapture(false);
-    setShowAadhaarUploadInput(false);
-    setAadhaarInputMode(null);
-    setFormData(prev => ({
-      ...prev,
-      name: "",
-      idProofNumber: "",
-      dob: "",
-      gender: "",
-      address: "",
-    }));
-  };
-
   const cancelCapture = () => {
     stopCamera();
-    setCapturedAadhaarPhotoPreview(null);
+    setCapturedImage(null);
     setOcrImage(null);
-    setOcrLoading(false);
-    setShowAadhaarCapture(false);
-    setShowAadhaarUploadInput(false);
-    setAadhaarInputMode(null);
-    setFormData(prev => ({
-      ...prev,
-      name: "",
-      idProofNumber: "",
-      dob: "",
-      gender: "",
-      address: "",
-    }));
+    setShowLiveCapture(false);
   };
 
   const startTenantPhotoCapture = async () => {
     setTenantPhoto(null);
-    setCapturedTenantPhotoPreview(null);
-    setShowTenantPhotoUploadInput(false);
     try {
       const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
       if (tenantVideoRef.current) {
         tenantVideoRef.current.srcObject = cameraStream;
       }
       setTenantPhotoStream(cameraStream);
-      setShowTenantPhotoCapture(true);
     } catch (err) {
       console.error("Error accessing camera:", err);
       showToast("Failed to access camera. Please ensure camera permissions are granted.", { type: "error" });
       setTenantPhotoStream(null);
-      setShowTenantPhotoCapture(false);
     }
   };
 
@@ -569,34 +469,17 @@ const TenantForm = ({
       context.drawImage(tenantVideoRef.current, 0, 0, canvas.width, canvas.height);
       
       canvas.toBlob((blob) => {
-        const photoUrl = URL.createObjectURL(blob);
-        setTenantPhoto(photoUrl);
-        setCapturedTenantPhotoPreview(photoUrl);
+        handleImageUpload(null, blob, true);
         stopTenantPhotoCapture();
+        setShowTenantPhotoCapture(false);
       }, 'image/png');
     }
-  };
-
-  const confirmTenantPhoto = () => {
-    if (capturedTenantPhotoPreview && onComplete) {
-      onComplete(capturedTenantPhotoPreview);
-      setCapturedTenantPhotoPreview(null);
-    }
-  };
-
-  const retakeTenantPhoto = () => {
-    setTenantPhoto(null);
-    setCapturedTenantPhotoPreview(null);
-    setShowTenantPhotoCapture(false);
-    setShowTenantPhotoUploadInput(false);
   };
 
   const cancelTenantPhotoCapture = () => {
     stopTenantPhotoCapture();
     setTenantPhoto(null);
-    setCapturedTenantPhotoPreview(null);
     setShowTenantPhotoCapture(false);
-    setShowTenantPhotoUploadInput(false);
   };
 
   useEffect(() => {
@@ -769,7 +652,6 @@ const TenantForm = ({
   const renderFormContent = () => {
     switch (formMode) {
       case "tenantPhotoCapture":
-<<<<<<< HEAD
   return (
           <div className="premium-tenant-form-section">
         <div className="premium-tenant-photo-upload">
@@ -778,51 +660,12 @@ const TenantForm = ({
               <label className="premium-tenant-ocr-label flex-grow">
                 <FaUpload className="mr-2" />
                 Upload Tenant Photo
-=======
-        return (
-          <div className="premium-tenant-step">
-            {!capturedTenantPhotoPreview ? (
-              <div className="flex flex-col items-center">
-                <video ref={tenantVideoRef} autoPlay playsInline className="w-full max-w-md rounded-lg shadow-md mb-4"></video>
-                <div className="flex gap-4">
-                  <button type="button" onClick={captureTenantPhoto} className="premium-tenant-submit-btn">
-                    <FaCamera className="mr-2" /> Capture Photo
-                  </button>
-                  <button type="button" onClick={cancelTenantPhotoCapture} className="premium-tenant-back-btn">
-                    <FaTimes className="mr-2" /> Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center">
-                <h3 className="text-xl font-bold mb-4">Photo Preview</h3>
-                <img src={capturedTenantPhotoPreview} alt="Captured Tenant" className="w-full max-w-sm rounded-lg shadow-md mb-4" />
-                <div className="flex gap-4">
-                  <button type="button" onClick={retakeTenantPhoto} className="premium-tenant-back-btn">
-                    <FaRedo className="mr-2" /> Retake
-                  </button>
-                  <button type="button" onClick={confirmTenantPhoto} className="premium-tenant-submit-btn">
-                    <FaCheckCircle className="mr-2" /> Confirm Photo
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-
-      case "tenantPhotoUpload":
-        return (
-          <div className="premium-tenant-step">
-            {!capturedTenantPhotoPreview ? (
-              <div className="flex flex-col items-center">
->>>>>>> 87e0efc4742028bcb3f4bb5a6fb353944beaf84c
                 <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => handleImageUpload(e, null, true)}
-                  className="mb-4 p-2 border rounded-md"
+                  className="hidden"
                 />
-<<<<<<< HEAD
               </label>
               <button
                 type="button"
@@ -936,27 +779,11 @@ const TenantForm = ({
                     onClick={cancelCapture}
                     className="premium-tenant-btn premium-tenant-cancel-btn"
                   >
-=======
-                <button type="button" onClick={cancelTenantPhotoCapture} className="premium-tenant-back-btn">
->>>>>>> 87e0efc4742028bcb3f4bb5a6fb353944beaf84c
                     <FaTimes className="mr-2" /> Cancel
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center">
-                <h3 className="text-xl font-bold mb-4">Photo Preview</h3>
-                <img src={capturedTenantPhotoPreview} alt="Uploaded Tenant" className="w-full max-w-sm rounded-lg shadow-md mb-4" />
-                <div className="flex gap-4">
-                  <button type="button" onClick={retakeTenantPhoto} className="premium-tenant-back-btn">
-                    <FaRedo className="mr-2" /> Retake
-                  </button>
-                  <button type="button" onClick={confirmTenantPhoto} className="premium-tenant-submit-btn">
-                    <FaCheckCircle className="mr-2" /> Confirm Photo
                   </button>
                 </div>
               </div>
             )}
-<<<<<<< HEAD
 
             {/* Show captured image preview for Aadhaar */}
             {capturedImage && (
@@ -1178,263 +1005,10 @@ const TenantForm = ({
                   id="bedNumber"
                   name="bedNumber"
                   value={formData.bedNumber.toString()}
-=======
-          </div>
-        );
-
-      case "aadhaarUpload":
-        return (
-          <div className="premium-tenant-step">
-            {!capturedAadhaarPhotoPreview ? (
-              // Show initial choice or selected input method
-              aadhaarInputMode === null ? (
-                <div className="flex flex-col items-center justify-center p-4">
-                  <h3 className="text-2xl font-semibold text-gray-800 mb-6">Aadhaar Card</h3>
-                  <div className="flex flex-col sm:flex-row gap-6 w-full max-w-md">
-                    <button
-                      type="button"
-                      onClick={() => setAadhaarInputMode('upload')}
-                      className="premium-tenant-submit-btn flex-1 flex items-center justify-center py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 text-lg"
-                    >
-                      <FaUpload className="mr-3 text-xl" /> Upload Aadhaar Image
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAadhaarInputMode('camera');
-                        startCamera();
-                      }}
-                      className="premium-tenant-back-btn flex-1 flex items-center justify-center py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 text-lg"
-                    >
-                      <FaCamera className="mr-3 text-xl" /> Capture Live Aadhaar Photo
-                    </button>
-                  </div>
-                </div>
-              ) : aadhaarInputMode === 'camera' ? (
-                // Camera view
-                <div className="flex flex-col items-center">
-                  <video ref={videoRef} autoPlay playsInline className="w-full max-w-md rounded-lg shadow-md mb-4"></video>
-                  <div className="flex gap-4">
-                    <button type="button" onClick={capturePhoto} className="premium-tenant-submit-btn">
-                      <FaCamera className="mr-2" /> Capture Aadhaar
-                    </button>
-                    <button type="button" onClick={cancelCapture} className="premium-tenant-back-btn">
-                      <FaTimes className="mr-2" /> Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                // Upload file view
-                <div className="flex flex-col items-center">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageUpload(e, null, false)}
-                    className="mb-4 p-2 border rounded-md"
-                  />
-                  <button type="button" onClick={cancelCapture} className="premium-tenant-back-btn">
-                      <FaTimes className="mr-2" /> Cancel
-                  </button>
-                </div>
-              )
-            ) : (
-              // Aadhaar Photo Preview and OCR data display
-              <div className="premium-tenant-form-container">
-                  <div className="premium-tenant-ocr-preview mt-4">
-                      <img src={capturedAadhaarPhotoPreview} alt="Aadhaar Preview" />
-                      <p className="premium-tenant-ocr-note">
-                          Review extracted details below and edit if needed
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCapturedAadhaarPhotoPreview(null);
-                          setOcrImage(null);
-                          setOcrLoading(false);
-                          setAadhaarInputMode(null); // Go back to choice screen
-                          setFormData(prev => ({
-                            ...prev,
-                            name: "",
-                            idProofNumber: "",
-                            dob: "",
-                            gender: "",
-                            address: "",
-                          }));
-                        }}
-                        className="premium-tenant-btn premium-tenant-retake-btn mt-2"
-                      >
-                        <FaRedo className="mr-2" /> Choose New Photo
-                      </button>
-                  </div>
-
-                  {ocrLoading ? (
-                    <div className="flex justify-center items-center py-4">
-                      <p className="text-gray-600">Processing Aadhaar details...</p>
-                    </div>
-                  ) : (
-                    <div className="premium-tenant-form-grid mt-4">
-                        <div className="premium-tenant-form-group">
-                            <label htmlFor="name" className="premium-tenant-form-label">
-                                <FaUser className="inline-block mr-2" /> Full Name
-                            </label>
-                            <input
-                                type="text"
-                                id="name"
-                                name="name"
-                                value={formData.name}
-                                onChange={onChange}
-                                className="premium-tenant-form-input"
-                                placeholder="Extracted Name"
-                                required
-                            />
-                        </div>
-                        <div className="premium-tenant-form-group">
-                            <label htmlFor="idProofNumber" className="premium-tenant-form-label">
-                                <FaIdCard className="inline-block mr-2" /> Aadhaar Number
-                            </label>
-                            <input
-                                type="text"
-                                id="idProofNumber"
-                                name="idProofNumber"
-                                value={formData.idProofNumber}
-                                onChange={onChange}
-                                className="premium-tenant-form-input"
-                                placeholder="Extracted Aadhaar Number"
-                                required
-                            />
-                        </div>
-                        <div className="premium-tenant-form-group">
-                            <label htmlFor="dob" className="premium-tenant-form-label">
-                                <FaCalendarAlt className="inline-block mr-2" /> Date of Birth
-                            </label>
-                            <input
-                                type="date"
-                                id="dob"
-                                name="dob"
-                                value={formData.dob || ""}
-                                onChange={onChange}
-                                className="premium-tenant-form-input"
-                                max={new Date().toISOString().split("T")[0]}
-                                placeholder="Extracted DOB"
-                                required
-                            />
-                        </div>
-                        <div className="premium-tenant-form-group">
-                            <label htmlFor="gender" className="premium-tenant-form-label">
-                                <FaUserFriends className="inline-block mr-2" /> Gender
-                            </label>
-                            <select
-                                id="gender"
-                                name="gender"
-                                value={formData.gender}
-                                onChange={onChange}
-                                className="premium-tenant-form-select"
-                                required
-                            >
-                                <option value="">Select Gender</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                                <option value="Other">Other</option>
-                            </select>
-                        </div>
-                        <div className="premium-tenant-form-group col-span-2">
-                            <label htmlFor="address" className="premium-tenant-form-label">
-                                <FaHome className="inline-block mr-2" /> Address
-                            </label>
-                            <textarea
-                                id="address"
-                                name="address"
-                                value={formData.address}
-                                onChange={onChange}
-                                rows="3"
-                                className="premium-tenant-form-input"
-                                placeholder="Extracted Address"
-                                required
-                            ></textarea>
-                        </div>
-                    </div>
-                  )}
-              </div>
-            )}
-          </div>
-        );
-
-      case "additionalDetails":
-        return (
-          <div className="premium-tenant-form-grid">
-            <div className="premium-tenant-form-group">
-              <label htmlFor="email" className="premium-tenant-form-label">
-                <FaEnvelope className="inline-block mr-2" /> Email Address
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={onChange}
-                className="premium-tenant-form-input"
-                placeholder="Enter email address (optional)"
-              />
-        </div>
-
-            <div className="premium-tenant-form-group">
-              <label htmlFor="occupation" className="premium-tenant-form-label">
-                <FaBriefcase className="inline-block mr-2" /> Occupation
-              </label>
-              <input
-                type="text"
-                id="occupation"
-                name="occupation"
-                value={formData.occupation}
-                onChange={onChange}
-                className="premium-tenant-form-input"
-                placeholder="Enter occupation (optional)"
-              />
-            </div>
-
-            <div className="premium-tenant-form-group">
-              <label htmlFor="roomId" className="premium-tenant-form-label">
-                <FaBuilding className="inline-block mr-2" /> Room
-              </label>
-              <select
-                id="roomId"
-                name="roomId"
-                value={formData.roomId}
-                onChange={onChange}
-                className="premium-tenant-form-select"
-                required
-              >
-                <option value="">Select a room</option>
-                {rooms.map((room) => (
-                  <option
-                    key={room._id}
-                    value={room._id}
-                    disabled={room.occupiedBeds >= room.capacity}
-                  >
-                    Floor {room.floorNumber}, Room {room.roomNumber}
-                    {room.occupiedBeds > 0
-                      ? ` (${room.occupiedBeds}/${room.capacity} occupied)`
-                      : " (Vacant)"}
-                  </option>
-                ))}
-              </select>
-          </div>
-
-            {formData.roomId && (
-              <div className="premium-tenant-form-group">
-                <label htmlFor="bedName" className="premium-tenant-form-label">
-                  <FaBed className="inline-block mr-2" /> Bed Name
-                </label>
-                <select
-                  id="bedName"
-                  name="bedName"
-                  value={formData.bedName}
->>>>>>> 87e0efc4742028bcb3f4bb5a6fb353944beaf84c
                   onChange={onChange}
                   className="premium-tenant-form-select"
                   required
                 >
-<<<<<<< HEAD
                   <option value="">Select a bed</option>
                   {formData.roomId && rooms.find(r => r._id === formData.roomId) &&
                     Array.from({ length: rooms.find(r => r._id === formData.roomId).capacity }, (_, i) => {
@@ -1455,21 +1029,10 @@ const TenantForm = ({
                       );
                     })
                   }
-=======
-                  <option value="">Select Bed</option>
-                  {formData.roomId && rooms.find(r => r._id === formData.roomId)?.bedNames && rooms.find(r => r._id === formData.roomId).bedNames.map(bedNameOption => (
-                    <option key={bedNameOption} value={bedNameOption}>
-                      {bedNameOption}
-                        </option>
-                  ))}
->>>>>>> 87e0efc4742028bcb3f4bb5a6fb353944beaf84c
                 </select>
         </div>
       )}
-          </div>
-        );
 
-<<<<<<< HEAD
             <div className="premium-tenant-form-group">
               <label htmlFor="joiningDate" className="premium-tenant-form-label">
                 <FaCalendarAlt className="inline-block mr-2" /> Joining Date
@@ -1797,16 +1360,6 @@ const TenantForm = ({
           </form>
         </div>
       </div>
-=======
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="premium-tenant-form">
-            {renderFormContent()}
->>>>>>> 87e0efc4742028bcb3f4bb5a6fb353944beaf84c
     </div>
   );
 };

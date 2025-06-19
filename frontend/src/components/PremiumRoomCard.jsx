@@ -24,8 +24,6 @@ import {
   FaExclamationCircle,
   FaDoorOpen,
 } from "react-icons/fa";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 
 // Mapping of amenity names to icons
 const amenityIcons = {

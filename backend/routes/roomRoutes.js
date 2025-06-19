@@ -12,11 +12,7 @@ const router = express.Router();
 
 const { protect } = require("../middleware/auth");
 
-router.route("/fix-occupancy/all").get(protect, fixRoomOccupancy);
-
-
 router.route("/").get(protect, getRooms).post(protect, createRoom);
-
 
 router
   .route("/:id")
@@ -24,5 +20,6 @@ router
   .put(protect, updateRoom)
   .delete(protect, deleteRoom);
 
+router.route("/fix-occupancy/all").get(protect, fixRoomOccupancy);
 
 module.exports = router;

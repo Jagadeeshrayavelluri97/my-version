@@ -3,8 +3,6 @@ const Room = require("../models/Room");
 const Rent = require("../models/Rent");
 const ErrorResponse = require("../utils/errorResponse");
 const asyncHandler = require("../middleware/async");
-const Tesseract = require('node-tesseract-ocr');
-const sharp = require('sharp');
 
 // @desc    Get all tenants for logged in admin
 // @route   GET /api/v1/tenants
@@ -335,107 +333,4 @@ exports.getLastUpdatedTenant = asyncHandler(async (req, res, next) => {
     success: true,
     data: tenant,
   });
-});
-
-// @desc    Process Aadhaar Image for OCR
-// @route   POST /api/v1/tenants/aadhaar-ocr
-// @access  Private
-exports.processAadhaarImage = asyncHandler(async (req, res, next) => {
-  if (!req.file) {
-    return next(new ErrorResponse('No Aadhaar image uploaded', 400));
-  }
-
-  const imageBuffer = req.file.buffer;
-
-  try {
-    // Preprocess image with sharp for better OCR accuracy
-    // Convert to grayscale, enhance contrast, and optionally resize
-    const processedImageBuffer = await sharp(imageBuffer)
-      .grayscale()
-      .normalize() // Enhance contrast
-      .resize({ width: 1500, fit: 'inside' }) // Increase resolution for OCR
-      .png() // Convert to PNG for Tesseract
-      .toBuffer();
-
-    const config = {
-      lang: 'eng',
-      oem: 1, // OCR Engine Mode: 1 for Neural nets LSTM, 0 for Legacy, 2 for both, 3 for TesseractOnly
-      psm: 6, // Page Segmentation Mode: 6 for Assume a single uniform block of text.
-    };
-
-    const text = await Tesseract.recognize(processedImageBuffer, config.lang, config);
-    console.log("OCR Raw Text:", text);
-
-    // Basic parsing logic (this needs to be refined based on actual Aadhaar card layout)
-    let extractedData = {
-      name: '',
-      idProofNumber: '',
-      dob: '',
-      gender: '',
-      address: '',
-    };
-
-    // Example: Extracting Name (very basic, needs robust regex for real use)
-    const nameMatch = text.match(/(Name|N ame|Nom|N om)\s*[:.]?\s*([A-Za-z.\s]+)/i);
-    if (nameMatch && nameMatch[2]) {
-      extractedData.name = nameMatch[2].trim();
-    }
-
-    // Example: Extracting Aadhaar Number (usually 12 digits, often in 4-digit groups)
-    // This regex looks for 12 digits, optionally separated by spaces
-    const aadhaarMatch = text.match(/\b\d{4}\s?\d{4}\s?\d{4}\b/);
-    if (aadhaarMatch) {
-      extractedData.idProofNumber = aadhaarMatch[0].replace(/\s/g, ''); // Remove spaces
-    }
-
-    // Example: Extracting Date of Birth (DD/MM/YYYY or DD-MM-YYYY or YYYY)
-    const dobMatch = text.match(/(\d{2}[/\\-]\d{2}[/\\-]\d{4}|Year Of Birth\s*:\s*(\d{4})|DOB\s*:\s*(\d{2}\/\d{2}\/\d{4}))/i);
-    if (dobMatch) {
-        if (dobMatch[2]) { // For "Year Of Birth : YYYY"
-            extractedData.dob = dobMatch[2];
-        } else if (dobMatch[3]) { // For "DOB: DD/MM/YYYY"
-            extractedData.dob = dobMatch[3].replace(/\//g, '-'); // Convert to DD-MM-YYYY
-        } else {
-            extractedData.dob = dobMatch[0].replace(/\//g, '-'); // Convert to DD-MM-YYYY
-        }
-    }
-    // Attempt to convert to YYYY-MM-DD if DD-MM-YYYY
-    if (extractedData.dob.match(/^\d{2}-\d{2}-\d{4}$/)) {
-        const parts = extractedData.dob.split('-');
-        if (parts.length === 3) {
-            extractedData.dob = `${parts[2]}-${parts[1]}-${parts[0]}`;
-        }
-    }
-
-
-    // Example: Extracting Gender (Male/Female/M/F)
-    const genderMatch = text.match(/(Male|Female|M\b|F\b)/i);
-    if (genderMatch) {
-      extractedData.gender = genderMatch[0];
-      if (extractedData.gender.toLowerCase() === 'm') extractedData.gender = 'Male';
-      if (extractedData.gender.toLowerCase() === 'f') extractedData.gender = 'Female';
-    }
-
-    // Example: Extracting Address (very complex, usually needs more advanced OCR/NLP)
-    // This is a very simplistic approach, assuming address is after a keyword
-    const addressKeywords = /(Address|Addr|Add|VTC|Locality|Street|Road|Area|Taluk|Dist|State|Pin code|PIN)/i;
-    const addressStartIndex = text.search(addressKeywords);
-    if (addressStartIndex !== -1) {
-        let potentialAddress = text.substring(addressStartIndex);
-        // This is a very rough cut, in a real scenario you'd use more context or NLP
-        const lines = potentialAddress.split('\n').slice(0, 4); // Take next few lines
-        extractedData.address = lines.join(' ').replace(addressKeywords, '').trim().replace(/\s{2,}/g, ' ');
-    }
-
-
-    res.status(200).json({
-      success: true,
-      data: extractedData,
-      rawOcrText: text, // Include raw OCR text for debugging
-    });
-
-  } catch (err) {
-    console.error("Aadhaar OCR Processing Error:", err);
-    return next(new ErrorResponse(`Failed to process Aadhaar image: ${err.message}`, 500));
-  }
 });

@@ -35,7 +35,8 @@ exports.protect = asyncHandler(async (req, res, next) => {
       console.log("Backend: Admin not found for decoded ID:", decoded.id);
       return next(new ErrorResponse('Not authorized to access this route', 401));
     }
-    console.log(`Backend: Admin found: ${req.admin.name}, Route: ${req.originalUrl}`);
+    console.log(`Backend: Admin found: ${req.admin.name}`);
+
     next();
   } catch (err) {
     console.error("Backend: Token verification failed:", err.message);
