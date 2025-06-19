@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FaEdit,
@@ -29,6 +29,31 @@ const RoomCard = ({ room, onDelete }) => {
 
   const handleCardClick = () => {
     navigate(`/rooms/details/${_id}`);
+  };
+
+  const generateBedNames = (capacity) => {
+    const names = [];
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    for (let i = 0; i < capacity; i++) {
+      const group = Math.floor(i / 2) + 1; // Beds 1A, 1B, then 2A, 2B, etc.
+      const letter = letters[i % 2];
+      names.push(`${group}${letter}`);
+    }
+    return names;
+  };
+
+  // Use custom bed names if available, else fallback
+  const bedNames = room.bedNames && Array.isArray(room.bedNames) && room.bedNames.length === capacity
+    ? room.bedNames
+    : generateBedNames(capacity);
+  const beds = room.beds || bedNames.map((name, idx) => ({
+    name,
+    filled: idx < occupiedBeds,
+  }));
+  const handleBedClick = (bed) => {
+    // Prevent card click
+    window.event?.stopPropagation();
+    navigate(`/tenant-onboarding?roomId=${_id}&bedName=${bed.name}`);
   };
 
   return (
@@ -82,9 +107,8 @@ const RoomCard = ({ room, onDelete }) => {
                 Room {roomNumber}
               </span>
               <span
-                className={`ultra-status-badge ${
-                  isVacant ? "vacant-badge-green" : "inactive"
-                }`}
+                className={`ultra-status-badge ${isVacant ? "vacant-badge-green" : "inactive"
+                  }`}
                 style={{
                   fontSize: "0.8rem",
                   padding: "0.22rem 0.7rem",
@@ -151,6 +175,137 @@ const RoomCard = ({ room, onDelete }) => {
             Amenities: {amenities.length > 0 ? amenities.join(", ") : "None"}
           </span>
         </div>
+        <div className="ultra-info-row" style={{ margin: '1rem 0 0.5rem 0', fontWeight: 600 }}>
+          Bed Status:
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 12, marginTop: 4 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#fff', border: '2px solid #22c55e', display: 'inline-block', marginRight: 4 }}></span> Vacant
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#22c55e', display: 'inline-block', marginRight: 4 }}></span> Filled
+          </span>
+        </div>
+        {/* bed selection */}
+        {/* <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 16,
+          marginBottom: 12,
+        }}>
+          {beds.map((bed, idx) => (
+            <div
+              key={bed.name}
+              onClick={(e) => { e.stopPropagation(); handleBedClick(bed); }}
+              style={{
+                border: bed.filled ? '2px solid #ef4444' : '2px solid #22c55e',
+                background: bed.filled ? '#ef4444' : '#22c55e',
+                borderRadius: 12,
+                padding: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                position: 'relative',
+                minHeight: 70,
+                minWidth: 80,
+                boxShadow: bed.filled ? '0 0 0 2px #ef4444' : '0 0 0 1px #22c55e',
+                transition: 'box-shadow 0.2s',
+              }}
+            >
+              <span style={{
+                position: 'absolute',
+                top: 7,
+                right: 10,
+                background: '#3b82f6',
+                color: '#fff',
+                borderRadius: '50%',
+                width: 26,
+                height: 26,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 700,
+                fontSize: 15,
+                border: '2px solid #fff',
+                zIndex: 2,
+              }}>{bed.name}</span>
+              <FaBed size={44} color={bed.filled ? '#fff' : '#fff'} style={{ marginTop: 18, marginBottom: 10 }} />
+            </div>
+          ))}
+        </div> */}
+        {/* Bed selection*/}
+        <div 
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: 16,
+            marginBottom: 12,
+          }}
+        >
+          {beds.map((bed, idx) => {
+            const isFilled = bed.filled;
+            const background = isFilled ? '#22c55e' : '#ffffff';
+            const border = isFilled ? '2px solid #22c55e' : '2px solid #d1d5db';
+            const boxShadow = isFilled ? '0 0 0 2px #22c55e' : '0 0 0 1px #e5e7eb';
+            const iconColor = isFilled ? '#ffffff' : '#6b7280';
+
+            return (
+              <div
+                key={bed.name}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleBedClick(bed);
+                }}
+                style={{
+                  border,
+                  background,
+                  borderRadius: 12,
+                  padding: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  minHeight: 70,
+                  minWidth: 80,
+                  boxShadow,
+                  transition: 'box-shadow 0.2s, background 0.2s',
+                }}
+              >
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: 7,
+                    right: 10,
+                    background: '#3b82f6',
+                    color: '#fff',
+                    borderRadius: '50%',
+                    width: 26,
+                    height: 26,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    fontSize: 15,
+                    border: '2px solid #fff',
+                    zIndex: 2,
+                  }}
+                >
+                  {bed.name}
+                </span>
+                <FaBed
+                  size={44}
+                  color={iconColor}
+                  style={{ marginTop: 18, marginBottom: 10 }}
+                />
+              </div>
+            );
+          })}
+        </div>
+
       </div>
       <div
         className="ultra-card-actions"

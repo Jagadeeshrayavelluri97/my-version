@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { FaUserPlus, FaEye, FaEyeSlash, FaUser, FaEnvelope, FaBuilding, FaMapMarkerAlt, FaPhone } from "react-icons/fa";
+import { FaUserPlus, FaEye, FaEyeSlash, FaUser, FaEnvelope, FaBuilding, FaMapMarkerAlt, FaPhone, FaHome } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 
 const Register = () => {
@@ -13,11 +13,12 @@ const Register = () => {
     pgName: "",
     address: "",
     phone: "",
+    propertyType: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const { name, email, password, confirmPassword, pgName, address, phone } = formData;
+  const { name, email, password, confirmPassword, pgName, address, phone, propertyType } = formData;
 
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
@@ -179,9 +180,34 @@ const Register = () => {
             </div>
 
             <div className="transform transition-all duration-300 hover:scale-[1.02]">
+              <label htmlFor="propertyType" className="block text-sm font-medium text-purple-100">
+                <FaHome className="inline-block mr-2" />
+                Property Type
+              </label>
+              <div className="mt-1 relative">
+                <select
+                  id="propertyType"
+                  name="propertyType"
+                  required
+                  value={propertyType}
+                  onChange={handleChange}
+                  className="appearance-none block w-full px-4 py-3 border border-white/20 rounded-xl bg-white/10 placeholder-purple-300 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 cursor-pointer"
+                >
+                  <option value="PG" className="bg-purple-900 text-white">PG</option>
+                  <option value="Dormitory" className="bg-purple-900 text-white">Dormitory</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <svg className="h-5 w-5 text-purple-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div className="transform transition-all duration-300 hover:scale-[1.02]">
               <label htmlFor="pgName" className="block text-sm font-medium text-purple-100">
                 <FaBuilding className="inline-block mr-2" />
-                PG Name
+                {propertyType === "Dormitory" ? "Dormitory Name" : "PG Name"}
               </label>
               <div className="mt-1">
                 <input
@@ -192,7 +218,7 @@ const Register = () => {
                   value={pgName}
                   onChange={handleChange}
                   className="appearance-none block w-full px-4 py-3 border border-white/20 rounded-xl bg-white/10 placeholder-purple-300 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
-                  placeholder="Enter your PG name"
+                  placeholder={propertyType === "Dormitory" ? "Enter your Dormitory name" : "Enter your PG name"}
                 />
               </div>
             </div>
@@ -211,7 +237,7 @@ const Register = () => {
                   value={address}
                   onChange={handleChange}
                   className="appearance-none block w-full px-4 py-3 border border-white/20 rounded-xl bg-white/10 placeholder-purple-300 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
-                  placeholder="Enter your PG address"
+                  placeholder={propertyType === "Dormitory" ? "Enter your Dormitory address" : "Enter your PG address"}
                 />
               </div>
             </div>
